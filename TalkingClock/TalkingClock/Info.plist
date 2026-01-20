@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+    </array>
+    <key>NSUserNotificationUsageDescription</key>
+    <string>We need notification permission to announce the time when the app is in the background.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>This app uses text-to-speech to announce the time.</string>
+</dict>
+</plist>
