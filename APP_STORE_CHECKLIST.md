@@ -1,6 +1,6 @@
 # Release checklist
 
-The repository foundation is not an App Store release.
+The implementation is not yet an App Store release. Physical-device delivery tests, final artwork, and signing remain release gates.
 
 - [ ] Compile and test the new app with Xcode 26+.
 - [ ] Complete the physical-device acceptance tests in [the plan](docs/implementation-plan.md).

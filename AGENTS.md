@@ -6,8 +6,8 @@ This repository builds Talking Clock, a native iOS alarm clock that speaks the a
 
 - `v0/` preserves the original interval clock and unimplemented alarm proposal. Treat it as a read-only reference.
 - Read `docs/implementation-plan.md`, `docs/SPEC.md`, and `docs/CONVENTIONS.md` before changing the app.
-- The new app will live in `Sources/TalkingClock/`, with portable domain code in `Sources/AlarmCore/` and tests in `Tests/AlarmCoreTests/`.
-- This foundation establishes conventions; do not claim the new application exists until its implementation lands.
+- The new app lives in `Sources/TalkingClock/`, with portable domain code in `Sources/AlarmCore/` and tests in `Tests/AlarmCoreTests/`.
+- The new application is implemented; physical-device verification remains a release gate.
 
 ## Engineering workflow
 

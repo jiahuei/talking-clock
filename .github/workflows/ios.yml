@@ -1,0 +1,40 @@
+name: iOS
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Select Xcode 26
+        run: |
+          XCODE_PATH=$(find /Applications -maxdepth 1 -name 'Xcode_26*.app' | sort -V | tail -1)
+          test -n "$XCODE_PATH"
+          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
+          xcodebuild -version
+      - name: Test alarm domain and failure recovery
+        run: swift test
+      - name: Build iOS app
+        run: xcodebuild -project TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Launch smoke test
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for runtime, devices in data["devices"].items() if "iOS-26" in runtime for d in devices if d["name"].startswith("iPhone")))')
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/Build/Products/Debug-iphonesimulator/TalkingClock.app
+          xcrun simctl launch "$DEVICE_ID" com.jiahuei.talkingclock
+          sleep 5
+          xcrun simctl io "$DEVICE_ID" screenshot build/launch.png
+      - name: Save launch screenshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: simulator-launch
+          path: build/launch.png

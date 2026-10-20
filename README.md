@@ -1,13 +1,21 @@
 # Talking Clock
 
-A native iOS alarm clock that announces the alarm time.
+A native SwiftUI alarm clock for iPhone and iPad on **iOS 26+**. A chime and an English voice announce the scheduled alarm time using AlarmKit's system-managed custom sound, including while the app is closed.
 
-This foundation preserves the original interval-clock prototype in [`v0/`](v0/) and specifies a new SwiftUI app using iOS 26 AlarmKit. The new application is the next implementation milestone.
+- One-time alarms and custom weekly repeats.
+- Editable labels, enable/disable, voice preview, and per-alarm snooze length.
+- System Stop and Open controls; in-app snooze preserves repeating alarms.
+- Next-alarm summary, live analog clock, and on-demand time speech.
+- Local persistence with recoverable scheduling changes; no account, tracking, or runtime dependencies.
 
-- [Product specification](docs/SPEC.md)
-- [Implementation plan and v0 review](docs/implementation-plan.md)
-- [Swift conventions](docs/CONVENTIONS.md)
-- [Development guide](QUICKSTART.md)
-- [Agent instructions](AGENTS.md)
+Open `TalkingClock.xcodeproj` in **Xcode 26+**, select the shared `TalkingClock` scheme, and run. See [QUICKSTART.md](QUICKSTART.md) for signing, tests, and device checks.
 
-The rewrite targets iOS 26+ and Xcode 26+. It will use system-managed alarms and generated spoken audio, without accounts, tracking, or purchases.
+The voice is a recording of the configured alarm time, not a live announcement that changes while ringing. Delayed delivery or a DST adjustment can differ from the recorded time. Custom sound behavior must be validated on physical iOS hardware before release; see [APP_STORE_CHECKLIST.md](APP_STORE_CHECKLIST.md).
+
+## Repository
+
+- `Sources/TalkingClock/`: SwiftUI screens, AlarmKit adapter, and AVFoundation audio.
+- `Sources/AlarmCore/`: records, calendar calculations, persistence, and recoverable store.
+- `Tests/AlarmCoreTests/`: domain and failure-path tests; run `swift test`.
+- `v0/`: original prototype, preserved unchanged.
+- [Specification](docs/SPEC.md), [conventions](docs/CONVENTIONS.md), and [implementation plan / v0 review](docs/implementation-plan.md).
