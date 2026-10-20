@@ -132,13 +132,18 @@ public struct SystemAlarm: Equatable, Sendable {
     /// Reverse the journal through the same durable path, including partially cancelled old alarms.
     public func discardChange() async {
         guard !isBusy, !storageFailed, let change = document.change else { return }
+        // A previous discard may itself have failed; resume its journal instead of reversing it again.
+        if change.target == document.records {
+            await retry()
+            return
+        }
         isBusy = true
         defer { isBusy = false }
         do {
             var rollback = document
             rollback.change = AlarmChange(
                 target: document.records,
-                additions: document.records.filter(\.isEnabled),
+                additions: document.records.filter { $0.isEnabled && change.cancellations.contains($0.systemID) },
                 cancellations: Set(change.additions.map(\.systemID)).subtracting(document.records.map(\.systemID))
             )
             try repository.save(rollback)

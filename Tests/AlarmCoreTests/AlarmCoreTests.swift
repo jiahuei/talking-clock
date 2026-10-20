@@ -320,6 +320,40 @@ private enum TestFailure: Error { case expected }
         XCTAssertFalse(store.needsRecovery)
     }
 
+    /// Ensures discard restores only affected alarms, without re-arming unrelated removed schedules.
+    func testDiscardDoesNotResurrectUnrelatedAlarm() async {
+        let old = await savedRepeating()
+        _ = await store.save(AlarmRecord(hour: 9, weekdays: [2]))
+        let unrelated = store.records.first { $0.id != old.id }!
+        scheduler.registered[unrelated.systemID] = nil
+        scheduler.failSchedule = true
+        var changed = old
+        changed.hour = 10
+        _ = await store.save(changed)
+        await store.discardChange()
+        XCTAssertNil(scheduler.registered[unrelated.systemID])
+        XCTAssertFalse(store.needsRecovery)
+        XCTAssertFalse(store.records.first { $0.id == unrelated.id }!.isEnabled)
+    }
+
+    /// Ensures repeated discard after cancellation failure finishes rollback without leaking new alarms.
+    func testDiscardCanResumeFailedRollback() async {
+        let old = await savedRepeating()
+        repository.failAtWrite = repository.writes + 2
+        var changed = old
+        changed.hour = 10
+        _ = await store.save(changed)
+        scheduler.failCancel = true
+        await store.discardChange()
+        XCTAssertTrue(store.needsRecovery)
+        XCTAssertEqual(scheduler.registered.count, 2)
+        scheduler.failCancel = false
+        await store.discardChange()
+        XCTAssertFalse(store.needsRecovery)
+        XCTAssertEqual(scheduler.registered.count, 1)
+        XCTAssertNotNil(scheduler.registered[old.systemID])
+    }
+
     /// Ensures old fixed-date journal entries cannot replay expired alarms on retry.
     func testExpiredRecoveryDoesNotReschedule() async {
         let alarm = AlarmRecord(fireDate: Date(timeIntervalSince1970: 1))
