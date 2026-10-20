@@ -7,6 +7,7 @@ struct MainView: View {
     let audio: AlarmAudio
     @State private var editing: AlarmRecord?
     @State private var deleting: AlarmRecord?
+    @State private var authorizationDenied = AlarmManager.shared.authorizationState == .denied
 
     var body: some View {
         TabView {
@@ -71,6 +72,12 @@ struct MainView: View {
         .alert("Alarm needs attention", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
             Button("OK") { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "") }
+        .task {
+            for await state in AlarmManager.shared.authorizationUpdates {
+                authorizationDenied = state == .denied
+                store.refresh()
+            }
+        }
     }
 
     @ViewBuilder private var status: some View {
@@ -86,7 +93,7 @@ struct MainView: View {
                     .font(.subheadline)
             }.padding().frame(maxWidth: .infinity, alignment: .leading).background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 20))
         }
-        if AlarmManager.shared.authorizationState == .denied {
+        if authorizationDenied {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Alarm access is off", systemImage: "bell.slash")
                 Text("Allow alarms in Settings, then turn your alarms back on.").font(.subheadline)
@@ -151,7 +158,7 @@ struct MainView: View {
     }
 
     private var ringingControls: some View {
-        ForEach(store.ringing) { alarm in
+        ForEach(store.ringing, id: \.systemID) { alarm in
             VStack(alignment: .leading, spacing: 16) {
                 Label("\(alarm.label) is ringing", systemImage: "alarm.waves.left.and.right.fill").font(.title3.bold())
                 HStack {

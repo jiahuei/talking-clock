@@ -333,7 +333,7 @@ private enum TestFailure: Error { case expected }
 
 @MainActor final class AlarmRepositoryTests: XCTestCase {
     /// Ensures atomic disk persistence round-trips records and preserves an unreadable file.
-    func testDiskRoundTripAndCorruption() throws {
+    func testDiskRoundTripAndCorruption() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         let url = directory.appendingPathComponent("alarms.json")
@@ -349,7 +349,7 @@ private enum TestFailure: Error { case expected }
     }
 
     /// Ensures unsupported schemas and duplicate identities cannot enter the store.
-    func testSchemaValidation() throws {
+    func testSchemaValidation() async throws {
         let alarm = AlarmRecord()
         XCTAssertThrowsError(try AlarmDocument(records: [alarm, alarm]).validate())
         var future = AlarmDocument()

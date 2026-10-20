@@ -184,9 +184,20 @@ private final class SpeechFileWriter: @unchecked Sendable {
     }
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in self.stop() }
+        Task { @MainActor in
+            guard self.player === player else { return }
+            self.player = nil
+            if !self.speaker.isSpeaking {
+                try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            }
+        }
     }
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.stop() }
+        Task { @MainActor in
+            // A delayed completion from old speech must not stop a newly started preview.
+            if self.player == nil, !self.speaker.isSpeaking {
+                try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            }
+        }
     }
 }

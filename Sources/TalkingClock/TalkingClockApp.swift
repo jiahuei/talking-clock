@@ -24,9 +24,6 @@ struct TalkingClockApp: App {
                     store.refresh()
                     for await _ in AlarmManager.shared.alarmUpdates { store.refresh() }
                 }
-                .task {
-                    for await _ in AlarmManager.shared.authorizationUpdates { store.refresh() }
-                }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { store.refresh() }
                     else { audio.stop() }
