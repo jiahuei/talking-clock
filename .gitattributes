@@ -64,3 +64,9 @@
 # These files should not be processed by Linguist for language detection on GitHub.com
 *.p linguist-detectable=false
 *.gz linguist-detectable=false
+*.caf binary
+*.wav binary
+*.swift text
+*.plist text
+*.xcprivacy text
+*.pbxproj text
