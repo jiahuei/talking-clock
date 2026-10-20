@@ -27,7 +27,7 @@ CI runs package tests, an unsigned simulator build, and a launch smoke test on m
 
 The app stores versioned JSON in Application Support/TalkingClock and generated PCM voice clips in Library/Sounds. Clips are shared by spoken time and contain no personal alarm labels. The archive's `clockSettings` key is not migrated because it contains interval-clock preferences, not alarms.
 
-A change journal is saved before touching system alarms. Replacement alarms are scheduled before old registrations are cancelled. If a change fails, use **Retry sync** to finish it. A pending change blocks further edits; old schedules can remain active until retry succeeds. Relaunching does not automatically replay a pending change or re-arm a missing alarm. An unreadable file is preserved and writes are blocked.
+A change journal is saved before touching system alarms. Replacement alarms are scheduled before old registrations are cancelled. If a change fails, use **Retry sync** to finish it or **Discard change** to restore the previous configuration. A pending change blocks further edits; old schedules can remain active until retry succeeds. Relaunching does not automatically replay a pending change or re-arm a missing alarm. An unreadable file is preserved and writes are blocked.
 
 One-time alarms and snoozes use fixed dates. Weekly alarms follow local wall-clock time through AlarmKit. The next-alarm display uses Calendar's next-valid-time/first-repeated-time policy; verify OS delivery behavior around DST on real devices.
 

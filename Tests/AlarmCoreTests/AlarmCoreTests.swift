@@ -292,6 +292,34 @@ private enum TestFailure: Error { case expected }
         XCTAssertEqual(scheduler.scheduleCalls, 1)
     }
 
+    /// Ensures an unavailable voice does not trap the user in an unrecoverable pending edit.
+    func testDiscardFailedEditKeepsOriginal() async {
+        let old = await savedRepeating()
+        scheduler.failSchedule = true
+        var changed = old
+        changed.hour = 10
+        _ = await store.save(changed)
+        await store.discardChange()
+        XCTAssertFalse(store.needsRecovery)
+        XCTAssertEqual(store.records, [old])
+        XCTAssertEqual(scheduler.registered.count, 1)
+    }
+
+    /// Ensures discarding a partially completed edit restores old registrations before removing new ones.
+    func testDiscardAfterFinalWriteFailureRestoresOriginal() async {
+        let old = await savedRepeating()
+        repository.failAtWrite = repository.writes + 2
+        var changed = old
+        changed.hour = 10
+        _ = await store.save(changed)
+        XCTAssertNil(scheduler.registered[old.systemID])
+        await store.discardChange()
+        XCTAssertEqual(store.records, [old])
+        XCTAssertNotNil(scheduler.registered[old.systemID])
+        XCTAssertEqual(scheduler.registered.count, 1)
+        XCTAssertFalse(store.needsRecovery)
+    }
+
     /// Ensures old fixed-date journal entries cannot replay expired alarms on retry.
     func testExpiredRecoveryDoesNotReschedule() async {
         let alarm = AlarmRecord(fireDate: Date(timeIntervalSince1970: 1))

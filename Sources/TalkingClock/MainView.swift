@@ -82,6 +82,8 @@ struct MainView: View {
                 Label("An alarm change is unfinished", systemImage: "exclamationmark.arrow.trianglehead.2.clockwise.rotate.90")
                 Text("Retry to finish saving and synchronize your alarms.").font(.subheadline).foregroundStyle(.secondary)
                 Button("Retry sync") { Task { await store.retry() } }.buttonStyle(.bordered)
+                Button("Discard change", role: .destructive) { Task { await store.discardChange() } }
+                    .font(.subheadline)
             }.padding().frame(maxWidth: .infinity, alignment: .leading).background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 20))
         }
         if AlarmManager.shared.authorizationState == .denied {

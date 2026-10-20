@@ -129,6 +129,26 @@ public struct SystemAlarm: Equatable, Sendable {
         } catch { errorMessage = error.localizedDescription }
     }
 
+    /// Reverse the journal through the same durable path, including partially cancelled old alarms.
+    public func discardChange() async {
+        guard !isBusy, !storageFailed, let change = document.change else { return }
+        isBusy = true
+        defer { isBusy = false }
+        do {
+            var rollback = document
+            rollback.change = AlarmChange(
+                target: document.records,
+                additions: document.records.filter(\.isEnabled),
+                cancellations: Set(change.additions.map(\.systemID)).subtracting(document.records.map(\.systemID))
+            )
+            try repository.save(rollback)
+            document = rollback
+            try await finishChange()
+            try reconcile()
+            errorMessage = nil
+        } catch { errorMessage = error.localizedDescription }
+    }
+
     private func mutate(_ action: () async throws -> Void) async -> Bool {
         guard !isBusy else { return false }
         guard !storageFailed else { errorMessage = AlarmFailure.corruptStorage.localizedDescription; return false }
