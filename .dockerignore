@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+*.p12
+*.mobileprovision
+*.cer
+*.key
+DerivedData
+.build
+.swiftpm
+build
+node_modules
+v0
+*.xcarchive
+*.ipa
+*.xcresult

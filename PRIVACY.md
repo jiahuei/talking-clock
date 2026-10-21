@@ -1,29 +1,7 @@
-# Privacy Policy for Talking Clock
+# Privacy
 
-Last updated: January 20, 2026
+Talking Clock is designed to work locally. It has no accounts, advertisements, analytics, or app-operated network service.
 
-## Data Collection
-Talking Clock does not collect, store, transmit, or share any personal data.
+Alarm settings and generated spoken audio remain on the device, subject to the device's backup settings. AlarmKit authorization allows the system to schedule and present alarms. Speech synthesis does not require microphone or speech-recognition access.
 
-## Local Storage
-All app settings are stored locally on your device using iOS UserDefaults.
-This data never leaves your device.
-
-## Permissions
-The app requests the following permissions:
-- **Notifications**: To announce the time when the app is in background
-- **Audio**: To play speech announcements
-
-These permissions are used solely for app functionality and no data is collected.
-
-## Third-Party Services
-This app does not use any third-party analytics, tracking, or advertising services.
-
-## Children's Privacy
-This app does not knowingly collect any information from children.
-
-## Changes to Privacy Policy
-We may update this policy occasionally. Changes will be posted at this URL.
-
-## Contact
-For questions about this privacy policy, contact: your.email@example.com
+The planned implementation and final release metadata must be reviewed together before App Store submission. Report privacy questions through [GitHub Issues](https://github.com/jiahuei/ios-talking-clock/issues) without including sensitive information.
