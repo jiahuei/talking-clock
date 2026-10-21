@@ -1,5 +1,7 @@
 # Development
 
+For first-time Mac setup and the complete release process, see the [App Store publishing guide](docs/app-store-publishing.md).
+
 ## Run on iPhone or simulator
 
 1. Install Xcode 26+ on a compatible Mac.
