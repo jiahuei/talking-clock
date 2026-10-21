@@ -6,6 +6,8 @@ Added the official Swift formatter to the push-only lint workflow using a digest
 
 The iOS build retains `pull_request` alongside pushes to `main` and tags matching `v*`.
 
+Integrated the updated lint workflow and approach-validation guidance from `main`, preserving its action pins, branch-push filter, and Prettier settings.
+
 ## Verification
 
 - `swift format lint --strict --recursive Package.swift Sources Tests`: passed in the pinned CI container.
