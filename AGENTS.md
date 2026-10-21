@@ -6,7 +6,7 @@ Adapted with minimal project-specific changes from [Travel Plan](https://github.
 
 ## Project Status and Layout
 
-This foundation contains planning and configuration for the new app, with the original prototype archived in `v0/`. The application paths and commands below are implementation targets until their manifests and source files exist. Do not report the application as implemented or runnable before then.
+This branch contains the new SwiftUI/AlarmKit implementation, with the original prototype archived in `v0/`. See `APP_STORE_CHECKLIST.md` for remaining release requirements; distinguish implemented code from verified builds and physical-device behavior.
 
 - `docs/implementation-plan.md`: product scope, architecture, milestones, and acceptance criteria.
 - `Sources/TalkingClock/`: SwiftUI screens and AlarmKit/AVFoundation adapters.
@@ -130,7 +130,9 @@ Before reporting completion, review the final diff for correctness, unnecessary 
 
 The push-only documentation CI runs `npx --yes prettier@3.8.3 --check '**/*.md' '.github/**/*.yml' .prettierrc`. Use that exact version for formatting this foundation. It needs registry access if not cached.
 
-Add Swift package tests and iOS build checks to CI as their manifests and implementations land. The application commands below apply after that bootstrap; do not run or claim checks against nonexistent code. Request additional execution permissions only when the environment requires them.
+The same push-only workflow checks Swift with `swift format lint --strict --recursive Package.swift Sources Tests` in its pinned Swift 6.2.4 container. Use that toolchain and `.swift-format` configuration; apply fixes with `swift format format --in-place --recursive Package.swift Sources Tests`. Keep `v0/` excluded.
+
+Runtime CI also runs Swift package tests, an unsigned iOS simulator build, and a launch smoke check. Request additional execution permissions only when the environment requires them.
 
 Do not format unrelated files merely to make a repository-wide check pass.
 

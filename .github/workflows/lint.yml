@@ -13,6 +13,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  swift_format_lint:
+    name: Swift Format Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: swift@sha256:d6f8f6112e9a63da0a4a151d6b93acd16699d35c0b82531ac1a245f5af210197 # Swift 6.2.4
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Check Swift formatting
+        run: swift format lint --strict --recursive Package.swift Sources Tests
+
   prettier_lint:
     name: Prettier Checks
     runs-on: ubuntu-latest
