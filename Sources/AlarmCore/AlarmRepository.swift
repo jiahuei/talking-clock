@@ -19,7 +19,8 @@ public struct AlarmDocument: Codable, Equatable {
         guard version == 1 else { throw AlarmFailure.corruptStorage }
         for list in [records, change?.target ?? [], change?.additions ?? []] {
             guard Set(list.map(\.id)).count == list.count,
-                  Set(list.map(\.systemID)).count == list.count else { throw AlarmFailure.corruptStorage }
+                Set(list.map(\.systemID)).count == list.count
+            else { throw AlarmFailure.corruptStorage }
             for alarm in list { try alarm.validate() }
         }
     }

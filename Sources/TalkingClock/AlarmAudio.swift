@@ -31,7 +31,10 @@ private final class SpeechFileWriter: @unchecked Sendable {
 
     func consume(_ buffer: AVAudioBuffer) {
         lock.lock()
-        guard !finished else { lock.unlock(); return }
+        guard !finished else {
+            lock.unlock()
+            return
+        }
         do {
             guard let pcm = buffer as? AVAudioPCMBuffer else { throw AudioFailure.unavailable }
             if pcm.frameLength == 0 {
@@ -46,8 +49,9 @@ private final class SpeechFileWriter: @unchecked Sendable {
                 settings[AVLinearPCMIsFloatKey] = false
                 settings[AVLinearPCMIsBigEndianKey] = false
                 settings[AVLinearPCMIsNonInterleaved] = false
-                file = try AVAudioFile(forWriting: url, settings: settings,
-                                       commonFormat: pcm.format.commonFormat, interleaved: pcm.format.isInterleaved)
+                file = try AVAudioFile(
+                    forWriting: url, settings: settings,
+                    commonFormat: pcm.format.commonFormat, interleaved: pcm.format.isInterleaved)
                 try writeChime(format: pcm.format)
             }
             duration += Double(pcm.frameLength) / pcm.format.sampleRate
@@ -59,13 +63,16 @@ private final class SpeechFileWriter: @unchecked Sendable {
 
     func timeout() {
         lock.lock()
-        guard !finished else { lock.unlock(); return }
+        guard !finished else {
+            lock.unlock()
+            return
+        }
         finishLocked(.failure(AudioFailure.timedOut))
     }
 
     private func finishLocked(_ result: Result<URL, Error>) {
         finished = true
-        file = nil // Close the CAF before AlarmKit receives its filename.
+        file = nil  // Close the CAF before AlarmKit receives its filename.
         if case .failure = result { try? FileManager.default.removeItem(at: url) }
         lock.unlock()
         completion(result)
@@ -73,7 +80,8 @@ private final class SpeechFileWriter: @unchecked Sendable {
 
     private func writeChime(format: AVAudioFormat) throws {
         guard format.commonFormat == .pcmFormatFloat32, !format.isInterleaved,
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(format.sampleRate)) else {
+            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(format.sampleRate))
+        else {
             throw AudioFailure.unavailable
         }
         buffer.frameLength = buffer.frameCapacity
@@ -105,15 +113,23 @@ private final class SpeechFileWriter: @unchecked Sendable {
         let text = Self.phrase(hour: alarm.hour, minute: alarm.minute)
         let digest = SHA256.hash(data: Data("v1-en-US-\(text)".utf8)).map { String(format: "%02x", $0) }.joined()
         let name = "talking-clock-\(digest).caf"
-        let directory = try FileManager.default.url(for: .libraryDirectory, in: .userDomainMask,
-                                                    appropriateFor: nil, create: true).appendingPathComponent("Sounds")
+        let directory = try FileManager.default.url(
+            for: .libraryDirectory, in: .userDomainMask,
+            appropriateFor: nil, create: true
+        ).appendingPathComponent("Sounds")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let output = directory.appendingPathComponent(name)
         if FileManager.default.fileExists(atPath: output.path),
-           let file = try? AVAudioFile(forReading: output), file.length > 0 { return name }
+            let file = try? AVAudioFile(forReading: output), file.length > 0
+        {
+            return name
+        }
         guard !rendering else { throw AudioFailure.busy }
         rendering = true
-        defer { rendering = false; renderer = nil }
+        defer {
+            rendering = false
+            renderer = nil
+        }
         let temporary = directory.appendingPathComponent("\(UUID().uuidString).caf")
         let synthesizer = AVSpeechSynthesizer()
         renderer = synthesizer
@@ -130,8 +146,9 @@ private final class SpeechFileWriter: @unchecked Sendable {
             // A crash during synthesis leaves only an unreferenced temporary file.
             if FileManager.default.fileExists(atPath: output.path) { try FileManager.default.removeItem(at: output) }
             try FileManager.default.moveItem(at: temporary, to: output)
-            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
-                                                  ofItemAtPath: output.path)
+            try FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
+                ofItemAtPath: output.path)
             return name
         } catch {
             synthesizer.stopSpeaking(at: .immediate)
@@ -143,21 +160,27 @@ private final class SpeechFileWriter: @unchecked Sendable {
     func preview(_ alarm: AlarmRecord) async throws {
         guard alarm.announcesTime else { return }
         let name = try await sound(for: alarm)
-        let library = try FileManager.default.url(for: .libraryDirectory, in: .userDomainMask,
-                                                  appropriateFor: nil, create: false)
+        let library = try FileManager.default.url(
+            for: .libraryDirectory, in: .userDomainMask,
+            appropriateFor: nil, create: false)
         stop()
         try activateSession()
         player = try AVAudioPlayer(contentsOf: library.appendingPathComponent("Sounds").appendingPathComponent(name))
         player?.delegate = self
-        guard player?.play() == true else { stop(); throw AudioFailure.unavailable }
+        guard player?.play() == true else {
+            stop()
+            throw AudioFailure.unavailable
+        }
     }
 
     func speakNow() throws {
         stop()
         try activateSession()
         let now = Date()
-        let utterance = AVSpeechUtterance(string: Self.phrase(hour: Calendar.current.component(.hour, from: now),
-                                                           minute: Calendar.current.component(.minute, from: now)))
+        let utterance = AVSpeechUtterance(
+            string: Self.phrase(
+                hour: Calendar.current.component(.hour, from: now),
+                minute: Calendar.current.component(.minute, from: now)))
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         speaker.speak(utterance)
     }
@@ -179,7 +202,8 @@ private final class SpeechFileWriter: @unchecked Sendable {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US")
         formatter.dateFormat = "h:mm a"
-        let date = Calendar.current.date(from: DateComponents(year: 2001, month: 1, day: 1, hour: hour, minute: minute))!
+        let date = Calendar.current.date(
+            from: DateComponents(year: 2001, month: 1, day: 1, hour: hour, minute: minute))!
         return "The time is \(formatter.string(from: date))."
     }
 

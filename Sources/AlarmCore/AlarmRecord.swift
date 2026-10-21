@@ -1,7 +1,8 @@
 import Foundation
 
 public enum AlarmFailure: LocalizedError {
-    case invalidTime, invalidLabel, invalidWeekdays, invalidSnooze, corruptStorage, busy, permissionDenied, unfinishedChange
+    case invalidTime, invalidLabel, invalidWeekdays, invalidSnooze, corruptStorage, busy, permissionDenied,
+        unfinishedChange
 
     public var errorDescription: String? {
         switch self {
@@ -32,9 +33,11 @@ public struct AlarmRecord: Codable, Identifiable, Equatable, Sendable {
     public var fireDate: Date?
     public var parentID: UUID?
 
-    public init(id: UUID = UUID(), systemID: UUID = UUID(), label: String = "Wake up", hour: Int = 7,
-                minute: Int = 0, weekdays: Set<Int> = [], announcesTime: Bool = true,
-                snoozeMinutes: Int = 9, isEnabled: Bool = true, fireDate: Date? = nil, parentID: UUID? = nil) {
+    public init(
+        id: UUID = UUID(), systemID: UUID = UUID(), label: String = "Wake up", hour: Int = 7,
+        minute: Int = 0, weekdays: Set<Int> = [], announcesTime: Bool = true,
+        snoozeMinutes: Int = 9, isEnabled: Bool = true, fireDate: Date? = nil, parentID: UUID? = nil
+    ) {
         self.id = id
         self.systemID = systemID
         self.label = label
@@ -66,8 +69,9 @@ public struct AlarmRecord: Codable, Identifiable, Equatable, Sendable {
             components.minute = minute
             components.second = 0
             components.weekday = day
-            return calendar.nextDate(after: date, matching: components, matchingPolicy: .nextTime,
-                                     repeatedTimePolicy: .first, direction: .forward)
+            return calendar.nextDate(
+                after: date, matching: components, matchingPolicy: .nextTime,
+                repeatedTimePolicy: .first, direction: .forward)
         }.min()
     }
 

@@ -121,6 +121,8 @@ Before reporting completion, review the final diff for correctness, unnecessary 
 
 The push-only documentation CI runs `npx --yes prettier@3.8.3 --check '**/*.md' '.github/**/*.yml' .prettierrc`. Use that exact version for formatting this foundation. It needs registry access if not cached.
 
+The same push-only workflow checks Swift with `swift format lint --strict --recursive Package.swift Sources Tests` in its pinned Swift 6.2.4 container. Use that toolchain and `.swift-format` configuration; apply fixes with `swift format format --in-place --recursive Package.swift Sources Tests`. Keep `v0/` excluded.
+
 Runtime CI also runs Swift package tests, an unsigned iOS simulator build, and a launch smoke check. Request additional execution permissions only when the environment requires them.
 
 Do not format unrelated files merely to make a repository-wide check pass.

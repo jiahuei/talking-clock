@@ -7,6 +7,14 @@ concurrency:
   group: format-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  swift-format:
+    runs-on: ubuntu-latest
+    container:
+      image: swift@sha256:d6f8f6112e9a63da0a4a151d6b93acd16699d35c0b82531ac1a245f5af210197 # Swift 6.2.4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check Swift formatting
+        run: swift format lint --strict --recursive Package.swift Sources Tests
   prettier:
     runs-on: ubuntu-latest
     steps:

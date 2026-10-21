@@ -2,7 +2,7 @@
 
 ## Summary
 
-Changed the iOS workflow to run only on pushes to `main` and tags matching `v*`. Removed the pull-request trigger and documented the build trigger policy in the development guide.
+Changed the iOS workflow to run on pushes to `main` and tags matching `v*`, while retaining the pull-request trigger. Documented the build trigger policy in the development guide.
 
 ## Verification
 

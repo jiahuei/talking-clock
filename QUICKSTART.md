@@ -15,13 +15,16 @@ The app uses an English voice. With speech off, it uses the system alarm sound. 
 From the repository root:
 
 ```sh
+swift format lint --strict --recursive Package.swift Sources Tests
 swift test
 xcodebuild -project TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 npx --yes prettier@3.8.3 --check '**/*.md' '.github/**/*.yml' .prettierrc
 git diff --check
 ```
 
-On pushes to `main` and tags matching `v*`, iOS CI runs package tests, an unsigned simulator build, and a launch smoke test on macOS with Xcode 26. It uploads a launch screenshot. These checks do not prove physical-device alarm delivery.
+Formatting CI runs on every push. Swift checks use the official `swift format` tool bundled with Swift 6+, pinned to Swift 6.2.4 in CI. The `.swift-format` configuration keeps four-space indentation and a 120-column line length. To apply formatting, run `swift format format --in-place --recursive Package.swift Sources Tests` with the same toolchain. The archived `v0/` is excluded.
+
+On pull requests, pushes to `main`, and tags matching `v*`, iOS CI runs package tests, an unsigned simulator build, and a launch smoke test on macOS with Xcode 26. It uploads a launch screenshot. These checks do not prove physical-device alarm delivery.
 
 ## Storage and recovery
 

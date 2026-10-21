@@ -4,7 +4,10 @@ import Observation
 public struct SystemAlarm: Equatable, Sendable {
     public var id: UUID
     public var isAlerting: Bool
-    public init(id: UUID, isAlerting: Bool = false) { self.id = id; self.isAlerting = isAlerting }
+    public init(id: UUID, isAlerting: Bool = false) {
+        self.id = id
+        self.isAlerting = isAlerting
+    }
 }
 
 @MainActor public protocol AlarmScheduling {
@@ -70,16 +73,18 @@ public struct SystemAlarm: Equatable, Sendable {
             }
             let removed = document.records.filter { $0.id == alarm.id || $0.parentID == alarm.id }
             let target = document.records.filter { $0.id != alarm.id && $0.parentID != alarm.id } + [alarm]
-            try await commit(target: target, additions: alarm.isEnabled ? [alarm] : [],
-                             cancellations: Set(removed.map(\.systemID)))
+            try await commit(
+                target: target, additions: alarm.isEnabled ? [alarm] : [],
+                cancellations: Set(removed.map(\.systemID)))
         }
     }
 
     public func delete(_ alarm: AlarmRecord) async -> Bool {
         await mutate {
             let removed = document.records.filter { $0.id == alarm.id || $0.parentID == alarm.id }
-            try await commit(target: document.records.filter { $0.id != alarm.id && $0.parentID != alarm.id },
-                             additions: [], cancellations: Set(removed.map(\.systemID)))
+            try await commit(
+                target: document.records.filter { $0.id != alarm.id && $0.parentID != alarm.id },
+                additions: [], cancellations: Set(removed.map(\.systemID)))
         }
     }
 
@@ -156,8 +161,14 @@ public struct SystemAlarm: Equatable, Sendable {
 
     private func mutate(_ action: () async throws -> Void) async -> Bool {
         guard !isBusy else { return false }
-        guard !storageFailed else { errorMessage = AlarmFailure.corruptStorage.localizedDescription; return false }
-        guard document.change == nil else { errorMessage = AlarmFailure.unfinishedChange.localizedDescription; return false }
+        guard !storageFailed else {
+            errorMessage = AlarmFailure.corruptStorage.localizedDescription
+            return false
+        }
+        guard document.change == nil else {
+            errorMessage = AlarmFailure.unfinishedChange.localizedDescription
+            return false
+        }
         isBusy = true
         defer { isBusy = false }
         do {

@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+
 @testable import AlarmCore
 
 final class AlarmCalendarTests: XCTestCase {
@@ -13,33 +14,38 @@ final class AlarmCalendarTests: XCTestCase {
     /// Ensures selecting an already elapsed time schedules tomorrow, not immediately.
     func testOneTimeRollsPastMidnight() {
         let alarm = AlarmRecord(hour: 0, minute: 5)
-        XCTAssertEqual(alarm.nextFire(after: date("2030-01-01T23:59:00Z"), calendar: calendar()), date("2030-01-02T00:05:00Z"))
+        XCTAssertEqual(
+            alarm.nextFire(after: date("2030-01-01T23:59:00Z"), calendar: calendar()), date("2030-01-02T00:05:00Z"))
     }
 
     /// Ensures an exact time boundary is exclusive and cannot trigger twice.
     func testExactMinuteMovesForward() {
         let alarm = AlarmRecord(hour: 7)
-        XCTAssertEqual(alarm.nextFire(after: date("2030-01-01T07:00:00Z"), calendar: calendar()), date("2030-01-02T07:00:00Z"))
+        XCTAssertEqual(
+            alarm.nextFire(after: date("2030-01-01T07:00:00Z"), calendar: calendar()), date("2030-01-02T07:00:00Z"))
     }
 
     /// Ensures Friday evening's weekday alarm advances to Monday.
     func testWeekdayRollover() {
         let alarm = AlarmRecord(hour: 7, weekdays: Set(2...6))
-        XCTAssertEqual(alarm.nextFire(after: date("2030-01-04T20:00:00Z"), calendar: calendar()), date("2030-01-07T07:00:00Z"))
+        XCTAssertEqual(
+            alarm.nextFire(after: date("2030-01-04T20:00:00Z"), calendar: calendar()), date("2030-01-07T07:00:00Z"))
     }
 
     /// Ensures the spring DST gap advances to the next valid wall-clock time.
     func testSpringForward() {
         let alarm = AlarmRecord(hour: 2, minute: 30)
-        XCTAssertEqual(alarm.nextFire(after: date("2030-03-10T08:00:00Z"), calendar: calendar("America/Los_Angeles")),
-                       date("2030-03-10T10:00:00Z"))
+        XCTAssertEqual(
+            alarm.nextFire(after: date("2030-03-10T08:00:00Z"), calendar: calendar("America/Los_Angeles")),
+            date("2030-03-10T10:00:00Z"))
     }
 
     /// Ensures the fall DST overlap chooses the first occurrence.
     func testFallBack() {
         let alarm = AlarmRecord(hour: 1, minute: 30)
-        XCTAssertEqual(alarm.nextFire(after: date("2030-11-03T07:00:00Z"), calendar: calendar("America/Los_Angeles")),
-                       date("2030-11-03T08:30:00Z"))
+        XCTAssertEqual(
+            alarm.nextFire(after: date("2030-11-03T07:00:00Z"), calendar: calendar("America/Los_Angeles")),
+            date("2030-11-03T08:30:00Z"))
     }
 
     /// Ensures weekly wall-clock alarms follow the supplied local time zone.
@@ -59,8 +65,10 @@ final class AlarmCalendarTests: XCTestCase {
 
     /// Guards persisted and edited records against invalid times, days, labels, and snooze values.
     func testValidation() {
-        for alarm in [AlarmRecord(hour: 24), AlarmRecord(minute: -1), AlarmRecord(weekdays: [0]),
-                      AlarmRecord(snoozeMinutes: 0), AlarmRecord(label: String(repeating: "x", count: 61))] {
+        for alarm in [
+            AlarmRecord(hour: 24), AlarmRecord(minute: -1), AlarmRecord(weekdays: [0]),
+            AlarmRecord(snoozeMinutes: 0), AlarmRecord(label: String(repeating: "x", count: 61)),
+        ] {
             XCTAssertThrowsError(try alarm.validate())
         }
         XCTAssertNoThrow(try AlarmRecord(hour: 23, minute: 59, weekdays: Set(1...7), snoozeMinutes: 30).validate())

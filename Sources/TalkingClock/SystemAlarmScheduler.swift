@@ -1,6 +1,6 @@
 import ActivityKit
-import AlarmKit
 import AlarmCore
+import AlarmKit
 import AppIntents
 import SwiftUI
 
@@ -28,15 +28,17 @@ struct OpenClockIntent: LiveActivityIntent {
 
     func schedule(_ alarm: AlarmRecord) async throws {
         let sound: AlertConfiguration.AlertSound
-        if alarm.announcesTime { sound = .named(try await audio.sound(for: alarm)) }
-        else { sound = .default }
+        if alarm.announcesTime { sound = .named(try await audio.sound(for: alarm)) } else { sound = .default }
 
         let schedule: Alarm.Schedule
-        if let date = alarm.fireDate { schedule = .fixed(date) }
-        else {
+        if let date = alarm.fireDate {
+            schedule = .fixed(date)
+        } else {
             let weekdays: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
-            schedule = .relative(.init(time: .init(hour: alarm.hour, minute: alarm.minute),
-                                       repeats: .weekly(alarm.weekdays.sorted().map { weekdays[$0 - 1] })))
+            schedule = .relative(
+                .init(
+                    time: .init(hour: alarm.hour, minute: alarm.minute),
+                    repeats: .weekly(alarm.weekdays.sorted().map { weekdays[$0 - 1] })))
         }
         let alert = AlarmPresentation.Alert(
             title: LocalizedStringResource(stringLiteral: alarm.label),
@@ -44,8 +46,9 @@ struct OpenClockIntent: LiveActivityIntent {
             secondaryButton: AlarmButton(text: "Open", textColor: .white, systemImageName: "arrow.up.right"),
             secondaryButtonBehavior: .custom
         )
-        let attributes = AlarmAttributes(presentation: AlarmPresentation(alert: alert),
-                                         metadata: ClockAlarmMetadata(), tintColor: Color.orange)
+        let attributes = AlarmAttributes(
+            presentation: AlarmPresentation(alert: alert),
+            metadata: ClockAlarmMetadata(), tintColor: Color.orange)
         let configuration = AlarmManager.AlarmConfiguration<ClockAlarmMetadata>.alarm(
             schedule: schedule, attributes: attributes, secondaryIntent: OpenClockIntent(), sound: sound
         )

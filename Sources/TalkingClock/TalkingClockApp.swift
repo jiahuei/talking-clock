@@ -12,8 +12,10 @@ struct TalkingClockApp: App {
         let audio = AlarmAudio()
         self.audio = audio
         let directory = URL.applicationSupportDirectory.appendingPathComponent("TalkingClock", isDirectory: true)
-        _store = State(initialValue: AlarmStore(scheduler: SystemAlarmScheduler(audio: audio),
-                                                repository: FileAlarmRepository(url: directory.appendingPathComponent("alarms.json"))))
+        _store = State(
+            initialValue: AlarmStore(
+                scheduler: SystemAlarmScheduler(audio: audio),
+                repository: FileAlarmRepository(url: directory.appendingPathComponent("alarms.json"))))
     }
 
     var body: some Scene {
@@ -25,8 +27,7 @@ struct TalkingClockApp: App {
                     for await _ in AlarmManager.shared.alarmUpdates { store.refresh() }
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { store.refresh() }
-                    else { audio.stop() }
+                    if phase == .active { store.refresh() } else { audio.stop() }
                 }
         }
     }
