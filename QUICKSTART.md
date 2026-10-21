@@ -21,7 +21,7 @@ npx --yes prettier@3.8.3 --check '**/*.md' '.github/**/*.yml' .prettierrc
 git diff --check
 ```
 
-CI runs package tests, an unsigned simulator build, and a launch smoke test on macOS with Xcode 26. It uploads a launch screenshot. These checks do not prove physical-device alarm delivery.
+On pushes to `main` and tags matching `v*`, iOS CI runs package tests, an unsigned simulator build, and a launch smoke test on macOS with Xcode 26. It uploads a launch screenshot. These checks do not prove physical-device alarm delivery.
 
 ## Storage and recovery
 
