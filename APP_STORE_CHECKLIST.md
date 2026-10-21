@@ -2,7 +2,7 @@
 
 The implementation is not yet an App Store release. Physical-device delivery tests, final artwork, and signing remain release gates.
 
-- [ ] Compile and test the new app with Xcode 26+.
+- [x] Compile and test the new app with Xcode 26+ ([CI verification](https://github.com/jiahuei/ios-talking-clock/actions/runs/39539682750)).
 - [ ] Complete the physical-device acceptance tests in [the plan](docs/implementation-plan.md).
 - [ ] Verify custom spoken sounds with the app foregrounded, backgrounded, terminated, and after restart/unlock.
 - [ ] Test silent mode, Focus, permission denial/revocation, and system volume.

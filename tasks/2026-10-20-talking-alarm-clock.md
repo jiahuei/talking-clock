@@ -10,5 +10,5 @@ Reimplemented the interval-clock prototype as a native iOS 26 alarm clock using 
 - `swiftc -frontend -parse Sources/TalkingClock/*.swift` in that container: passed (syntax only, not Apple SDK type checking).
 - `npx --yes prettier@3.8.3 --check '**/*.md' '.github/**/*.yml' .prettierrc`: passed.
 - `git diff --check`, property-list parsing, and shared-scheme XML parsing: passed.
-- Xcode is unavailable locally. The iOS CI job remains queued awaiting a GitHub macOS runner; the implementation PR is a draft until Apple SDK compilation and launch are verified.
+- Xcode is unavailable locally. [macOS CI](https://github.com/jiahuei/ios-talking-clock/actions/runs/39539682750) passed on October 21 with Xcode 26.6: all 28 tests, the unsigned iOS simulator build, and the launch smoke test. The launch screenshot was also inspected.
 - Physical-device delivery, sound behavior, accessibility, and App Store assets remain release gates.
