@@ -64,6 +64,7 @@ The user's job as a senior software engineer is dependent on you implementing cl
 
 ### 3. Task Tracking
 
+- Keep `tasks/` records local. The directory is ignored by Git; do not force-add its files to commits or PRs.
 - Use `tasks/todo.md` for substantial, multi-stage work when persistent tracking is useful.
 - Do not create or modify `tasks/todo.md` for small or routine changes; the completion record below is still required.
 - At the end of every feature, bug fix, or task, before the final handoff, create `tasks/YYYY-MM-DD-<task-name>.md`. Use the completion date and a short, descriptive, lowercase task name with hyphens.
