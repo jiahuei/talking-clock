@@ -1,6 +1,6 @@
 # Swift and iOS conventions
 
-- Use the official `swift format` tool and the repository's `.swift-format` configuration; see `QUICKSTART.md` for check and fix commands.
+- Use the official `swift format` tool and the `ios/.swift-format` configuration; see `QUICKSTART.md` for check and fix commands.
 - Use SwiftUI and Observation for presentation, Foundation for the portable core, AlarmKit for scheduling, and AVFoundation for audio.
 - Keep domain code independent of UI and Apple-only alarm/audio frameworks. Test it with Swift Package Manager.
 - Use value types for alarm records, stable UUIDs for schedules, and explicit errors for invalid records.

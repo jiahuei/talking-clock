@@ -6,12 +6,12 @@ Adapted with minimal project-specific changes from [Travel Plan](https://github.
 
 ## Project Status and Layout
 
-This branch contains the new SwiftUI/AlarmKit implementation, with the original prototype archived in `v0/`. See `APP_STORE_CHECKLIST.md` for remaining release requirements; distinguish implemented code from verified builds and physical-device behavior.
+This branch contains the new SwiftUI/AlarmKit implementation under `ios/`, with the original prototype archived in `v0/`. See `APP_STORE_CHECKLIST.md` for remaining release requirements; distinguish implemented code from verified builds and physical-device behavior.
 
 - `docs/implementation-plan.md`: product scope, architecture, milestones, and acceptance criteria.
-- `Sources/TalkingClock/`: SwiftUI screens and AlarmKit/AVFoundation adapters.
-- `Sources/AlarmCore/`: portable Swift domain, calendar calculations, persistence, and alarm state.
-- `Tests/AlarmCoreTests/`: domain and failure-path tests.
+- `ios/Sources/TalkingClock/`: SwiftUI screens and AlarmKit/AVFoundation adapters.
+- `ios/Sources/AlarmCore/`: portable Swift domain, calendar calculations, persistence, and alarm state.
+- `ios/Tests/AlarmCoreTests/`: domain and failure-path tests.
 - Read `docs/SPEC.md` and `docs/CONVENTIONS.md` before implementing the app.
 - `v0/` is the original interval clock and alarm proposal. Preserve it unchanged and use synthetic alarms in committed tests, screenshots, and documentation.
 
@@ -99,9 +99,9 @@ The user's job as a senior software engineer is dependent on you implementing cl
 
 - Use Xcode 26+ and Swift Package Manager for the iOS 26+ app. Keep dependency lockfiles trackable when created.
 - Run development commands from the repository root; see `QUICKSTART.md` for signing and device setup.
-- Once the package exists, run `swift test`.
+- Once the package exists, run `swift test --package-path ios`.
 - Keep persistence tests isolated in temporary directories and exercise scheduling failures through test doubles.
-- Once the app exists, run `xcodebuild -project TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build` on macOS.
+- Once the app exists, run `xcodebuild -project ios/TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build` on macOS.
 - Validate locked/background/terminated alarm delivery and custom spoken sounds on a physical device. Linux cannot compile Apple-only frameworks.
 - Do not import the reference application's backend, frontend, database, or container stack without a concrete iOS-app requirement.
 
@@ -139,7 +139,7 @@ Before reporting completion, review the final diff for correctness, unnecessary 
 
 The push-only documentation CI runs `npx --yes prettier@3.8.3 --check '**/*.md' '.github/**/*.yml' .prettierrc`. Use that exact version for formatting this foundation. It needs registry access if not cached.
 
-The same push-only workflow checks Swift with `swift format lint --strict --recursive Package.swift Sources Tests` in its pinned Swift 6.2.4 container. Use that toolchain and `.swift-format` configuration; apply fixes with `swift format format --in-place --recursive Package.swift Sources Tests`. Keep `v0/` excluded.
+The same push-only workflow checks Swift with `swift format lint --strict --recursive ios/Package.swift ios/Sources ios/Tests` in its pinned Swift 6.2.4 container. Use that toolchain and `ios/.swift-format` configuration; apply fixes with `swift format format --in-place --recursive ios/Package.swift ios/Sources ios/Tests`. Keep `v0/` excluded.
 
 Runtime CI also runs Swift package tests, an unsigned iOS simulator build, and a launch smoke check. Request additional execution permissions only when the environment requires them.
 
@@ -152,7 +152,7 @@ From the repository root, once the implementation exists:
 1. Inspect the test and build steps in `.github/workflows/ios.yml`.
 2. Select the Xcode/Swift toolchain used by that workflow.
 3. Confirm the selected versions: `xcodebuild -version` and `swift --version`.
-4. Run `swift test` for the portable domain and persistence logic.
+4. Run `swift test --package-path ios` for the portable domain and persistence logic.
 5. Run the unsigned simulator build command above and the launch smoke check configured in CI.
 6. Record physical-device verification separately; a simulator build does not prove alarm sound delivery.
 
@@ -210,7 +210,7 @@ Do not format unrelated files merely to make a repository-wide check pass. Do no
 - When writing prompts, avoid using non-ASCII symbols.
 - Follow the existing code style in each file.
 - Use meaningful variable and function names.
-- **Pin dependency versions**: Use exact versions (e.g. `.exact("2.0.0")`) for dependencies in `Package.swift`. Never use open-ended version ranges.
+- **Pin dependency versions**: Use exact versions (e.g. `.exact("2.0.0")`) for dependencies in `ios/Package.swift`. Never use open-ended version ranges.
 
 ### Code Comments
 

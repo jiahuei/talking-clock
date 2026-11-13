@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Check Swift formatting
-        run: swift format lint --strict --recursive Package.swift Sources Tests
+        run: swift format lint --strict --recursive ios/Package.swift ios/Sources ios/Tests
 
   prettier_lint:
     name: Prettier Checks
