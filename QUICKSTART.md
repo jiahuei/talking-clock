@@ -5,7 +5,7 @@ For first-time Mac setup and the complete release process, see the [App Store pu
 ## Run on iPhone or simulator
 
 1. Install Xcode 26+ on a compatible Mac.
-2. Open `TalkingClock.xcodeproj` and select the shared `TalkingClock` scheme.
+2. Open `ios/TalkingClock.xcodeproj` and select the shared `TalkingClock` scheme.
 3. Select an iOS 26+ simulator, or connect an iPhone and select your development team under Signing & Capabilities. Change the bundle identifier if necessary.
 4. Run, add an alarm, and allow alarm access when asked. Permissions are requested when enabling an alarm, not at launch.
 5. Preview the spoken sound in the editor. To test system delivery, set an alarm a few minutes ahead, save, then lock the device.
@@ -17,14 +17,14 @@ The app uses an English voice. With speech off, it uses the system alarm sound. 
 From the repository root:
 
 ```sh
-swift format lint --strict --recursive Package.swift Sources Tests
-swift test
-xcodebuild -project TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+swift format lint --strict --recursive ios/Package.swift ios/Sources ios/Tests
+swift test --package-path ios
+xcodebuild -project ios/TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 npx --yes prettier@3.8.3 --check '**/*.md' '.github/**/*.yml' .prettierrc
 git diff --check
 ```
 
-Formatting CI runs on every branch push. Swift checks use the official `swift format` tool bundled with Swift 6+, pinned to Swift 6.2.4 in CI. The `.swift-format` configuration keeps four-space indentation and a 120-column line length. To apply formatting, run `swift format format --in-place --recursive Package.swift Sources Tests` with the same toolchain. The archived `v0/` is excluded.
+Formatting CI runs on every branch push. Swift checks use the official `swift format` tool bundled with Swift 6+, pinned to Swift 6.2.4 in CI. The `ios/.swift-format` configuration keeps four-space indentation and a 120-column line length. To apply formatting, run `swift format format --in-place --recursive ios/Package.swift ios/Sources ios/Tests` with the same toolchain. The archived `v0/` is excluded.
 
 On pull requests, pushes to `main`, and tags matching `v*`, iOS CI runs package tests, an unsigned simulator build, and a launch smoke test on macOS with Xcode 26. It uploads a launch screenshot. These checks do not prove physical-device alarm delivery.
 

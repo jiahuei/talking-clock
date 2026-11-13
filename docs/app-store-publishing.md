@@ -26,7 +26,7 @@ Apple documentation was checked on **2026-10-21**. Recheck the linked requiremen
 | Item | Current repository state | Your release action |
 | --- | --- | --- |
 | App | Native SwiftUI/AlarmKit app for iOS/iPadOS 26+ | Test the actual release build on physical devices |
-| Xcode project and scheme | `TalkingClock.xcodeproj`, shared `TalkingClock` scheme | Open the root project; `v0/` is an archived prototype |
+| Xcode project and scheme | `ios/TalkingClock.xcodeproj`, shared `TalkingClock` scheme | Open the project under `ios/`; `v0/` is an archived prototype |
 | Bundle identifier | `com.jiahuei.talkingclock` | Confirm your developer team owns it, or choose your own permanent identifier |
 | Version / build | `2.0` / `1` in both configurations | Choose the public version and assign a fresh build number for each upload |
 | Signing | Automatic signing, no team committed | Select your paid Apple Developer Program team locally |
@@ -80,7 +80,7 @@ cd ~/Developer
 git clone https://github.com/jiahuei/ios-talking-clock.git
 cd ios-talking-clock
 git switch -c chore/prepare-first-release
-open TalkingClock.xcodeproj
+open ios/TalkingClock.xcodeproj
 ```
 
 If the repository is already on your Mac, use that checkout instead. Preserve any local changes, update `main` with `git pull --ff-only`, and create a release-preparation branch before editing.
@@ -91,7 +91,7 @@ In Xcode's navigator, select the blue **TalkingClock** project, then the **Talki
 2. Set the bundle identifier. Keep `com.jiahuei.talkingclock` only if it belongs to your team. Otherwise use a unique reverse-domain identifier you control, such as `com.yourname.talkingclock`. Confirm both configurations use the same identifier. Choose carefully: it identifies the app in App Store Connect and cannot be changed there after the first build upload. See [distribution preparation](https://help.apple.com/xcode/mac/current/en.lproj/dev91fe7130a.html).
 3. Under **General**, retain iPhone and iPad support and minimum iOS 26.0. The shared scheme is named **TalkingClock**. Do not open the similarly named project under `v0/`.
 4. Choose the public **Version**. The project starts at `2.0`; that can be your first public version, or you can intentionally change it before the first upload. The App Store Connect version must match it. **Build** starts at `1`; increment it for every replacement upload, even when the public version is unchanged.
-5. Check `Configuration/Info.plist`: `NSAlarmKitUsageDescription` is already present. Preserve a clear explanation of why the app needs alarm permission. No microphone or speech-recognition permission is needed for the existing speech-synthesis design.
+5. Check `ios/Configuration/Info.plist`: `NSAlarmKitUsageDescription` is already present. Preserve a clear explanation of why the app needs alarm permission. No microphone or speech-recognition permission is needed for the existing speech-synthesis design.
 
 The repository convention keeps signing team identifiers out of committed project settings. Keep the team selection local and inspect the project diff before committing public changes such as the permanent bundle ID, icon configuration, or version.
 
@@ -102,12 +102,12 @@ The repository convention keeps signing team identifiers out of committed projec
 From the repository root:
 
 ```sh
-swift test
-xcodebuild -project TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+swift test --package-path ios
+xcodebuild -project ios/TalkingClock.xcodeproj -scheme TalkingClock -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 git diff --check
 ```
 
-`swift test` runs the portable `AlarmCore` suite. The Xcode app scheme does not currently contain a test target, so Product > Test is not a substitute for the package command. The simulator build is deliberately unsigned; do not copy `CODE_SIGNING_ALLOWED=NO` into your device or archive configuration.
+`swift test --package-path ios` runs the portable `AlarmCore` suite. The Xcode app scheme does not currently contain a test target, so Product > Test is not a substitute for the package command. The simulator build is deliberately unsigned; do not copy `CODE_SIGNING_ALLOWED=NO` into your device or archive configuration.
 
 For an interactive smoke test, select an iPhone simulator in Xcode and press **Run** (`Command-R`). Add, edit, disable, and delete synthetic alarms; try voice preview, the clock tab, and the About screen. Repeat on an iPad simulator and with large text and dark appearance.
 
@@ -125,10 +125,10 @@ docker run --rm \
   --mount "type=bind,source=$PWD,target=/workspace,readonly" \
   --workdir /workspace \
   swift@sha256:d6f8f6112e9a63da0a4a151d6b93acd16699d35c0b82531ac1a245f5af210197 \
-  swift format lint --strict --recursive Package.swift Sources Tests
+  swift format lint --strict --recursive ios/Package.swift ios/Sources ios/Tests
 ```
 
-With the matching Swift toolchain selected locally, the same `swift format lint --strict --recursive Package.swift Sources Tests` command works directly. Docker and Node are development-check tools, not requirements for archiving or uploading the app. Keep `v0/` excluded.
+With the matching Swift toolchain selected locally, the same `swift format lint --strict --recursive ios/Package.swift ios/Sources ios/Tests` command works directly. Docker and Node are development-check tools, not requirements for archiving or uploading the app. Keep `v0/` excluded.
 
 ### Test real alarm delivery on your iPhone and iPad
 
@@ -154,7 +154,7 @@ Record device model, OS version, app version/build, steps, and result in a dated
 ### Add the app icon
 
 1. Prepare original artwork you have the rights to use. For the asset-catalog route, use an opaque 1024 × 1024 PNG for the standard iOS App Store icon; let the OS apply its mask rather than baking rounded corners into the image.
-2. In Xcode, create an **Asset Catalog** named `Assets.xcassets` under `Sources/TalkingClock/` and ensure it belongs to the TalkingClock target. Add an **App Icon** set named `AppIcon` and fill its required image wells. Use the single-size option if offered; follow Xcode's fields for any appearance variants.
+2. In Xcode, create an **Asset Catalog** named `Assets.xcassets` under `ios/Sources/TalkingClock/` and ensure it belongs to the TalkingClock target. Add an **App Icon** set named `AppIcon` and fill its required image wells. Use the single-size option if offered; follow Xcode's fields for any appearance variants.
 3. In the target's **General > App Icons and Launch Screen**, select `AppIcon` as the app icon source. In Build Settings, confirm **Asset Catalog App Icon Set Name** (`ASSETCATALOG_COMPILER_APPICON_NAME`) is `AppIcon` for Release as well as Debug.
 4. Build and run again, check the installed icon, and commit the artwork/catalog and public project setting. Follow [Apple's asset-catalog icon guide](https://developer.apple.com/documentation/xcode/configuring-your-app-icon) if the UI differs. No icon is configured in the current repository.
 
@@ -162,8 +162,8 @@ Record device model, OS version, app version/build, steps, and result in a dated
 
 1. Review [PRIVACY.md](../PRIVACY.md) and [SUPPORT.md](../SUPPORT.md) against the final app. Publish readable, stable HTTPS pages that open without authentication. A public repository page can be a starting point; verify it in a signed-out browser and keep the URLs working after release.
 2. Provide a monitored contact route and practical support instructions. Explain local alarm storage, generated voice clips, device backups, and how users can remove their data; avoid promises that do not match the shipped app.
-3. Add a clearly labeled **Privacy Policy** link to the app's About screen (`Sources/TalkingClock/MainView.swift`). Currently only a Support link is present. Apple's [review guidelines, section 5.1.1](https://developer.apple.com/app-store/review/guidelines/#privacy) require an accessible in-app policy link as well as App Store metadata. Test both links on a device.
-4. Inspect `Sources/TalkingClock/PrivacyInfo.xcprivacy`. It currently declares no tracking, collected data, or required-reason API use. Audit the final app and any later dependencies against [Apple's required-reason API list](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api); declare applicable approved reasons based on actual usage. Confirm the manifest is included in the archive's app bundle. The manifest, public policy, and App Store privacy answers are separate deliverables.
+3. Add a clearly labeled **Privacy Policy** link to the app's About screen (`ios/Sources/TalkingClock/MainView.swift`). Currently only a Support link is present. Apple's [review guidelines, section 5.1.1](https://developer.apple.com/app-store/review/guidelines/#privacy) require an accessible in-app policy link as well as App Store metadata. Test both links on a device.
+4. Inspect `ios/Sources/TalkingClock/PrivacyInfo.xcprivacy`. It currently declares no tracking, collected data, or required-reason API use. Audit the final app and any later dependencies against [Apple's required-reason API list](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api); declare applicable approved reasons based on actual usage. Confirm the manifest is included in the archive's app bundle. The manifest, public policy, and App Store privacy answers are separate deliverables.
 
 ### Capture screenshots
 
@@ -206,7 +206,7 @@ In your app's App Store Connect pages, save the following before submission. The
 
 For this local-only implementation, **Data Not Collected** may be appropriate only after checking the final release against [Apple's privacy definitions](https://developer.apple.com/app-store/app-privacy-details/). Do not infer it solely from the empty manifest, especially if analytics, crash SDKs, or services were added. Enter and publish the answers through **App Privacy**, including the mandatory privacy-policy URL; see [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/).
 
-Answer export-compliance questions for the actual binary. `Configuration/Info.plist` currently sets `ITSAppUsesNonExemptEncryption` to `false`; the app uses Apple's SHA-256 implementation for audio filenames. Confirm that declaration still matches the shipped functionality and follow [Apple's encryption questionnaire](https://developer.apple.com/help/app-store-connect/manage-app-information/determine-and-upload-app-encryption-documentation). If App Store Connect shows Missing Compliance, complete the requested information before testing/submission rather than changing the flag merely to bypass it.
+Answer export-compliance questions for the actual binary. `ios/Configuration/Info.plist` currently sets `ITSAppUsesNonExemptEncryption` to `false`; the app uses Apple's SHA-256 implementation for audio filenames. Confirm that declaration still matches the shipped functionality and follow [Apple's encryption questionnaire](https://developer.apple.com/help/app-store-connect/manage-app-information/determine-and-upload-app-encryption-documentation). If App Store Connect shows Missing Compliance, complete the requested information before testing/submission rather than changing the flag merely to bypass it.
 
 Complete trader-status declarations under **Business > Agreements > Compliance**. If distributing as a trader in the EU, Apple requires verification and public contact details. Assess your actual status; a free app does not automatically make you a non-trader. Follow [Apple's DSA instructions](https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements), including the declaration even if you do not select EU distribution. Resolve other region-specific requirements shown for the storefronts you choose.
 
