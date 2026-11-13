@@ -46,6 +46,7 @@ The recorded voice announces the **scheduled** time in English. It does not upda
 5. Open Terminal and select this installation. If your app has a versioned name, replace `/Applications/Xcode.app` below with its actual path.
 
 ```sh
+unset DEVELOPER_DIR
 sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
 sudo xcodebuild -runFirstLaunch
 xcode-select -p
@@ -55,7 +56,7 @@ xcrun swift --version
 git --version
 ```
 
-The selected path should end in `Xcode.app/Contents/Developer`, not `/Library/Developer/CommandLineTools`. The SDK list must include iOS 26 or later. Swift, Git, the compiler, simulator tools, and Swift Package Manager come with this setup; no CocoaPods or third-party app dependencies are needed.
+The selected path should end in `Xcode.app/Contents/Developer`, not `/Library/Developer/CommandLineTools`. `DEVELOPER_DIR` overrides `xcode-select`; the command above clears it for this shell. Check your shell startup configuration if a new Terminal window selects a different Xcode. The SDK list must include iOS 26 or later. Swift, Git, the compiler, simulator tools, and Swift Package Manager come with this setup; no CocoaPods or third-party app dependencies are needed.
 
 The SDK you build with and the minimum OS your app supports are separate. Keep this project's deployment target at **26.0** because it uses AlarmKit. Apple's [upload requirements](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/) currently require the iOS 26 SDK or later; its [submission page](https://developer.apple.com/app-store/submitting/) announces iOS 27 SDK requirements starting April 2027. Recheck when you release.
 
@@ -77,8 +78,8 @@ For a new checkout, run:
 ```sh
 mkdir -p ~/Developer
 cd ~/Developer
-git clone https://github.com/jiahuei/ios-talking-clock.git
-cd ios-talking-clock
+git clone https://github.com/jiahuei/talking-clock.git
+cd talking-clock
 git switch -c chore/prepare-first-release
 open TalkingClock.xcodeproj
 ```
