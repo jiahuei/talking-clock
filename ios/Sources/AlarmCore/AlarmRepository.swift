@@ -7,7 +7,7 @@ public struct AlarmChange: Codable, Equatable {
 }
 
 public struct AlarmDocument: Codable, Equatable {
-    public var version = 1
+    public var version = 2
     public var records: [AlarmRecord] = []
     public var change: AlarmChange?
     public init(records: [AlarmRecord] = [], change: AlarmChange? = nil) {
@@ -16,7 +16,7 @@ public struct AlarmDocument: Codable, Equatable {
     }
 
     public func validate() throws {
-        guard version == 1 else { throw AlarmFailure.corruptStorage }
+        guard version == 2 else { throw AlarmFailure.corruptStorage }
         for list in [records, change?.target ?? [], change?.additions ?? []] {
             guard Set(list.map(\.id)).count == list.count,
                 Set(list.map(\.systemID)).count == list.count
@@ -38,7 +38,27 @@ public struct AlarmDocument: Codable, Equatable {
     public func load() throws -> AlarmDocument {
         guard FileManager.default.fileExists(atPath: url.path) else { return AlarmDocument() }
         do {
-            let document = try JSONDecoder().decode(AlarmDocument.self, from: Data(contentsOf: url))
+            var document = try JSONDecoder().decode(AlarmDocument.self, from: Data(contentsOf: url))
+            if document.version == 1 {
+                // Migrate every journal snapshot as well as committed records before strict validation.
+                // Reject corrupt values outside the old contract rather than disguising them by clamping.
+                func migrate(_ records: [AlarmRecord]) throws -> [AlarmRecord] {
+                    try records.map { record in
+                        guard (1...30).contains(record.snoozeMinutes) else { throw AlarmFailure.corruptStorage }
+                        var updated = record
+                        updated.snoozeMinutes = min(15, max(2, record.snoozeMinutes))
+                        return updated
+                    }
+                }
+                document.records = try migrate(document.records)
+                if var change = document.change {
+                    change.target = try migrate(change.target)
+                    change.additions = try migrate(change.additions)
+                    document.change = change
+                }
+                document.version = 2
+                try save(document)
+            }
             try document.validate()
             return document
         } catch {

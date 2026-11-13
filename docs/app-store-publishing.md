@@ -32,7 +32,7 @@ Apple documentation was checked on **2026-10-21**. Recheck the linked requiremen
 | Signing | Automatic signing, no team committed | Select your paid Apple Developer Program team locally |
 | App icon | No asset catalog or AppIcon setting yet | Create and configure a final icon before archiving |
 | Privacy | Local-only design and bundled privacy manifest | Audit the final binary, publish a policy, and add an in-app policy link |
-| About screen | Support link exists; privacy-policy link does not | Add an accessible policy link before review |
+| About sheet | Support link and local policy text exist; public policy URL is pending | Publish and wire the policy URL before review |
 | CI | Formatting, domain tests, unsigned simulator build, launch check | Supply device evidence, signing, upload, and submission yourself |
 
 The recorded voice announces the **scheduled** time in English. It does not update continuously while ringing. Snooze requires opening the app from the system alert. Use these limits consistently in screenshots, descriptions, and reviewer notes.
@@ -109,7 +109,7 @@ git diff --check
 
 `swift test --package-path ios` runs the portable `AlarmCore` suite. The Xcode app scheme does not currently contain a test target, so Product > Test is not a substitute for the package command. The simulator build is deliberately unsigned; do not copy `CODE_SIGNING_ALLOWED=NO` into your device or archive configuration.
 
-For an interactive smoke test, select an iPhone simulator in Xcode and press **Run** (`Command-R`). Add, edit, disable, and delete synthetic alarms; try voice preview, the clock tab, and the About screen. Repeat on an iPad simulator and with large text and dark appearance.
+For an interactive smoke test, select an iPhone simulator in Xcode and press **Run** (`Command-R`). Add, edit, disable, and delete synthetic alarms; try voice preview, the clock tab, and the About sheet from the Clock screen's i button. Repeat on an iPad simulator and with large text and dark appearance.
 
 Formatting uses the versions in [the lint workflow](../.github/workflows/lint.yml). Install Node.js 24 from the [official Node.js download site](https://nodejs.org/en/download) if you want to run the Markdown/YAML check locally:
 
@@ -137,15 +137,17 @@ With the matching Swift toolchain selected locally, the same `swift format lint 
 3. Run from Xcode. Create an alarm a few minutes ahead and grant alarm permission. Confirm voice preview succeeds, then test scheduled delivery with the app closed and the device locked, disconnected from the debugger.
 4. Complete the matrix below and [all acceptance tests](implementation-plan.md#acceptance-tests). Repeat the core delivery tests on the later TestFlight build.
 
-| Scenario                                                | What to record                                                          |
-| ------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Scenario | What to record |
+| --- | --- |
 | Foreground, background, force-quit, restart then unlock | Whether the system alarm appears and the correct spoken clip is audible |
-| Silent mode, Focus, different system alarm volumes      | Actual audibility and any platform limitations                          |
-| Permission denied or revoked                            | Actionable error and no falsely enabled alarm                           |
-| One-time Stop, edits, disable, delete                   | No obsolete registration rings later                                    |
-| Weekly repeat and in-app snooze                         | Parent remains scheduled; snooze speaks its own scheduled time          |
-| Midnight, DST, time-zone changes                        | Actual delivery compared with the scheduled-time recording              |
-| iPad, landscape, VoiceOver, largest text, light/dark    | Usable controls, readable labels, and no clipped content                |
+| Silent mode, Focus, different system alarm volumes | Actual audibility and any platform limitations |
+| Permission denied or revoked | Actionable error and no falsely enabled alarm |
+| One-time Stop, edits, disable, delete | No obsolete registration rings later |
+| Weekly repeat and in-app snooze | Parent remains scheduled; snooze speaks its own scheduled time |
+| Clock/Timer intervals locked for an hour; music, silent switch, Focus, headphones and Bluetooth | Timing, ducking/restoration, route changes, interruptions, next-announcement Live Activity and Stop |
+| Timer paused/resumed/reset and final alert after force-quit | Correct remaining time, no obsolete alert, spoken completion |
+| Midnight, DST, time-zone changes | Actual delivery compared with the scheduled-time recording |
+| iPad, landscape, VoiceOver, largest text, light/dark | Usable controls, readable labels, and no clipped content |
 
 Record device model, OS version, app version/build, steps, and result in a dated release-test record. A preview or simulator launch does not establish locked-device delivery. Fix failures and retest before submitting; leave untested items unchecked.
 
@@ -162,7 +164,7 @@ Record device model, OS version, app version/build, steps, and result in a dated
 
 1. Review [PRIVACY.md](../PRIVACY.md) and [SUPPORT.md](../SUPPORT.md) against the final app. Publish readable, stable HTTPS pages that open without authentication. A public repository page can be a starting point; verify it in a signed-out browser and keep the URLs working after release.
 2. Provide a monitored contact route and practical support instructions. Explain local alarm storage, generated voice clips, device backups, and how users can remove their data; avoid promises that do not match the shipped app.
-3. Add a clearly labeled **Privacy Policy** link to the app's About screen (`ios/Sources/TalkingClock/MainView.swift`). Currently only a Support link is present. Apple's [review guidelines, section 5.1.1](https://developer.apple.com/app-store/review/guidelines/#privacy) require an accessible in-app policy link as well as App Store metadata. Test both links on a device.
+3. Add a clearly labeled **Privacy Policy** link to the app's About sheet (`ios/Sources/TalkingClock/ClockView.swift`). Local policy text is present; the public policy URL still needs publication. Apple's [review guidelines, section 5.1.1](https://developer.apple.com/app-store/review/guidelines/#privacy) require an accessible in-app policy link as well as App Store metadata. Test both links on a device.
 4. Inspect `ios/Sources/TalkingClock/PrivacyInfo.xcprivacy`. It currently declares no tracking, collected data, or required-reason API use. Audit the final app and any later dependencies against [Apple's required-reason API list](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api); declare applicable approved reasons based on actual usage. Confirm the manifest is included in the archive's app bundle. The manifest, public policy, and App Store privacy answers are separate deliverables.
 
 ### Capture screenshots
@@ -246,8 +248,8 @@ AlarmKit presents the system alarm using a chime and a prerecorded English
 announcement of the scheduled time. The clip does not update while ringing.
 Use Stop on the system alarm to dismiss it. To snooze, choose Open on the
 system alarm, then tap Snooze in the app; repeating schedules are preserved.
-The app does not depend on continuous background execution.
-Privacy Policy and Support are available on the About screen.
+Alarm and timer completion use AlarmKit. Clock and Timer interval speech currently requires the foreground; production background sessions remain gated on a recorded hour-long physical-device experiment. Before shipping background speech, update these notes with the validated continuous-audio behavior, user-start/stop controls, Live Activity, and force-quit limitation.
+Privacy Policy and Support are available on the About sheet from the Clock screen's i button.
 ```
 
 Use the final sentence only after adding and testing the policy link. Include a short demonstration attachment if it helps reproduce a device-only issue, but ensure reviewers can test the app directly.

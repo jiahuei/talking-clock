@@ -9,7 +9,7 @@ The rewrite addresses these findings:
 | Finding | Consequence | Decision |
 | --- | --- | --- |
 | `NotificationService` assigns `.default` to notification sound | Notification text is not spoken audio | Generate a speech sound before scheduling |
-| Timer drives announcements; audio background mode is declared | Suspension is not a dependable alarm trigger | System-managed AlarmKit schedules |
+| Timer drives announcements; audio background mode is declared | Suspension is not a dependable alarm trigger | AlarmKit for alarms and timer completion; prototype a user-started continuous speech programme before production background intervals |
 | Notifications are a rolling batch of 60 | Delivery ends unless the app replenishes the batch | Native weekly recurrence |
 | Every settings change removes all pending notifications | A new alarm implementation would risk unrelated cancellations | Cancel only owned alarm IDs |
 | Settings decoding silently falls back | Corruption can hide user state | Explicit storage errors |
@@ -20,20 +20,24 @@ The rewrite addresses these findings:
 
 `AlarmCore` owns validated records, weekday selection, next-occurrence calculations, storage, and a store tested through a scheduler protocol. The SwiftUI app owns presentation and AlarmKit/AVFoundation adapters. Persist desired state before system mutation and reconcile observed system state; surface failures instead of pretending that disk and system scheduling are one transaction.
 
-AlarmKit on iOS 26 is the minimum target because this product needs real alarms while suspended or terminated. Use a custom PCM chime and speech clip in `Library/Sounds`; no runtime speech callback is required at alarm delivery. A preview uses the same generated clip. Keep an on-demand live-time speech control on the clock screen.
+AlarmKit on iOS 26 is the minimum target because this product needs real alarms while suspended or terminated. Use a custom PCM chime and speech clip in `Library/Sounds`; no runtime speech callback is required at alarm delivery. A preview uses the same generated clip. Clock and Timer share the natural-English phrase engine and foreground interval scheduler. Background speech remains behind the device spike decision gate.
 
-Snooze is a separate fixed-date alarm initiated in the app. The system alert offers an Open action to reach controls. Do not add countdown presentations without the required Live Activity widget extension.
+Snooze is a separate fixed-date alarm initiated in the app. The system alert offers an Open action to reach controls. Timer countdowns include the required Live Activity widget extension.
 
 ## Visual direction
 
-Use a spacious clock face and large rounded numerals, a warm amber accent, a next-alarm summary, rounded alarm cards, and native sheets/toggles. Prefer semantic surfaces that adapt to light and dark appearances. Make the primary action obvious and provide a useful empty state without activating sample alarms.
+Follow the [Halo Ramp reference](design/halo-ramp-reference.html): Clock / Alarm / Timer, serif ring times, floating controls, and continuously blended OKLCH skies. Use the permitted New York/SF system font alternatives. About opens as a sheet from Clock's info button. Text, accent and panel tokens switch atomically at luminance thresholds; only sky colors ease.
 
 ## Milestones
 
-1. Foundation PR: preserve `v0`, establish agent instructions, ignore rules, formatting CI, specifications, and this review.
-2. App PR: implement the core and tests, sound generation, AlarmKit integration, alarm/clock/settings screens, editor, preview, stop/snooze, persistence, and reconciliation.
-3. Verification: run portable tests, unsigned simulator build, formatting, and diff checks; inspect CI results.
-4. Release gate: physical-device testing and App Store assets/signing. Do not mark this complete from a Linux build environment.
+1. Establish the three-tool specification and consolidate the native Mac workstream into #7.
+2. Implement shared phrases, interval boundaries, timer state, 2–15 minute snooze migration and failure-path tests.
+3. Run the physical-device background speech spike and record the decision before implementing a production background session or its Live Activity.
+4. Implement the Halo Ramp screens, snoozed sub-rows, confirmations, About and custom timer picker.
+5. Implement AlarmKit countdown completion and the required widget extension. Verify spoken final alerts and ringing-loop duration on hardware.
+6. Build the native Mac adapter and desktop target only after establishing its separate lifecycle/delivery contract.
+7. Run formatting, portable tests, simulator build/launch, reference contrast audit, accessibility checks, and physical-device acceptance.
+8. Complete release assets, policy publication and signing. See [delivery investigation](delivery-investigation.md) for implemented work and unresolved gates.
 
 ## Acceptance tests
 
@@ -46,6 +50,11 @@ Use a spacious clock face and large rounded numerals, a warm amber accent, a nex
 - Restart the app and device; verify persistence and system registration reconciliation.
 - Test midnight, week rollover, DST gaps/overlaps, time-zone changes, concurrent save attempts, corrupt storage, and scheduler failures.
 - Test VoiceOver, accessibility text sizes, light/dark mode, and compact/regular layouts.
+
+- Keep Clock running for at least an hour locked, then with music, silent switch and Bluetooth; record expected versus actual boundaries and other-audio restoration.
+- Run Timer presets/custom lengths, pause/resume/reset/restart, and verify its final alert after force-quit.
+- Confirm cancel-snooze never changes its parent and changing snooze length never moves a pending snooze.
+- Compare 07:00, 12:00, 18:50 and 23:00 light/dark screenshots with the reference.
 
 ## Primary references
 

@@ -80,7 +80,7 @@ struct AlarmEditor: View {
                         }.disabled(previewing)
                         Button("Stop preview", systemImage: "stop.circle") { audio.stop() }
                     }
-                    Stepper("Snooze: \(alarm.snoozeMinutes) minutes", value: $alarm.snoozeMinutes, in: 1...30)
+                    Stepper("Snooze: \(alarm.snoozeMinutes) minutes", value: $alarm.snoozeMinutes, in: 2...15)
                 } header: {
                     Text("Sound & snooze")
                 } footer: {

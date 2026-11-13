@@ -2,6 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>NSAlarmKitUsageDescription</key><string>Talking Clock schedules alarms you create and announces their time when they ring.</string>
+<key>NSSupportsLiveActivities</key><true/>
 <key>CFBundleDisplayName</key><string>Talking Clock</string>
 <key>ITSAppUsesNonExemptEncryption</key><false/>
 <key>UILaunchScreen</key><dict/>

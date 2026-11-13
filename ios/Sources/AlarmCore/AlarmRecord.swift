@@ -9,7 +9,7 @@ public enum AlarmFailure: LocalizedError {
         case .invalidTime: return "Choose a valid hour and minute."
         case .invalidLabel: return "Use an alarm label of 60 characters or fewer."
         case .invalidWeekdays: return "Choose valid repeat days."
-        case .invalidSnooze: return "Choose a snooze of 1 to 30 minutes."
+        case .invalidSnooze: return "Choose a snooze of 2 to 15 minutes."
         case .corruptStorage: return "Saved alarms could not be read. Your file has been preserved."
         case .busy: return "Another alarm change is still being saved."
         case .permissionDenied: return "Allow alarms in Settings to enable Talking Clock alarms."
@@ -55,7 +55,7 @@ public struct AlarmRecord: Codable, Identifiable, Equatable, Sendable {
         guard (0...23).contains(hour), (0...59).contains(minute) else { throw AlarmFailure.invalidTime }
         guard label.count <= 60 else { throw AlarmFailure.invalidLabel }
         guard weekdays.isSubset(of: Set(1...7)) else { throw AlarmFailure.invalidWeekdays }
-        guard (1...30).contains(snoozeMinutes) else { throw AlarmFailure.invalidSnooze }
+        guard (2...15).contains(snoozeMinutes) else { throw AlarmFailure.invalidSnooze }
         guard parentID != id else { throw AlarmFailure.corruptStorage }
     }
 
