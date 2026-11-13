@@ -34,7 +34,7 @@ struct TimerView: View {
                         }
                         ViewThatFits(in: .horizontal) {
                             HStack(spacing: 5) { presets }
-                            VStack { HStack { presets } }.font(.caption)
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 8) { presets }
                         }.disabled(timer.countdown.state == .running || timer.isBusy)
                         GlassPanel {
                             VStack(alignment: .leading, spacing: 14) {

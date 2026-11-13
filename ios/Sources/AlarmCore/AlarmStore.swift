@@ -73,8 +73,13 @@ public struct SystemAlarm: Equatable, Sendable {
             }
             // Editing a parent's snooze preference must not move or cancel an existing snooze.
             // Disabling and deleting still cancel its children.
+            let disablesParent =
+                !alarm.isEnabled
+                && document.records.contains {
+                    $0.id == alarm.id && $0.isEnabled
+                }
             let removed = document.records.filter {
-                $0.id == alarm.id || (!alarm.isEnabled && $0.parentID == alarm.id)
+                $0.id == alarm.id || (disablesParent && $0.parentID == alarm.id)
             }
             let removedIDs = Set(removed.map(\.id))
             let target = document.records.filter { !removedIDs.contains($0.id) } + [alarm]

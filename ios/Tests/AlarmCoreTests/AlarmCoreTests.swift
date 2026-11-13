@@ -285,6 +285,26 @@ private enum TestFailure: Error { case expected }
         XCTAssertFalse(store.records.contains { $0.id == child.id })
     }
 
+    /// Ensures editing an already-dismissed one-time parent's snooze length preserves its pending child.
+    func testEditDismissedOneTimeParentPreservesSnooze() async {
+        _ = await store.save(AlarmRecord())
+        let original = store.records[0]
+        scheduler.alerting.insert(original.systemID)
+        store.refresh()
+        _ = await store.snooze(original)
+        let child = store.records.first { $0.parentID == original.id }!
+        var parent = store.records.first { $0.id == original.id }!
+        XCTAssertFalse(parent.isEnabled)
+        parent.snoozeMinutes = 15
+        let result = await store.save(parent)
+        XCTAssertTrue(result)
+        XCTAssertEqual(store.records.first { $0.id == child.id }, child)
+        XCTAssertEqual(scheduler.registered[child.systemID], child)
+        _ = await store.delete(child)
+        XCTAssertEqual(store.records.first { $0.id == parent.id }?.snoozeMinutes, 15)
+        XCTAssertFalse(store.records.first { $0.id == parent.id }!.isEnabled)
+    }
+
     /// Ensures a completed snooze is removed and never re-arms itself.
     func testStopSnoozeRemovesChild() async {
         let parent = await savedRepeating()

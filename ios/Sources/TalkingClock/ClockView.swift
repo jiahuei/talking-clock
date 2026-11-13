@@ -6,7 +6,6 @@ struct ClockView: View {
     @Bindable var session: AnnouncementSession
     @State private var showingAbout = false
     @Environment(\.scenePhase) private var phase
-    @Environment(\.halo) private var palette
 
     var body: some View {
         SkyScreen {

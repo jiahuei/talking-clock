@@ -65,13 +65,16 @@
                     let session = AVAudioSession.sharedInstance()
                     try session.setCategory(.playback, mode: .voicePrompt, options: [.mixWithOthers])
                     try session.setActive(true)
-                    silence.scheduleBuffer(quiet, at: nil, options: .loops)
+                    // Choose the non-awaiting overload: the entire programme is queued before playback starts.
+                    silence.scheduleBuffer(quiet, at: nil, options: .loops, completionHandler: nil)
                     let starts = Date().addingTimeInterval(1)
                     let hostStart = mach_absolute_time() + AVAudioTime.hostTime(forSeconds: 1)
                     for (date, file) in events {
                         guard file.processingFormat == format else { throw CocoaError(.fileReadCorruptFile) }
                         let offset = AVAudioFramePosition(date.timeIntervalSince(starts) * format.sampleRate)
-                        speech.scheduleFile(file, at: AVAudioTime(sampleTime: offset, atRate: format.sampleRate))
+                        speech.scheduleFile(
+                            file, at: AVAudioTime(sampleTime: offset, atRate: format.sampleRate), completionHandler: nil
+                        )
                     }
                     activity = try Activity.request(
                         attributes: AnnouncementActivity(title: "Background speech experiment"),
