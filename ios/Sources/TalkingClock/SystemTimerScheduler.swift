@@ -33,11 +33,22 @@ import SwiftUI
 
     func state(id: UUID) throws -> TimerRegistration? {
         guard let alarm = try AlarmManager.shared.alarms.first(where: { $0.id == id }) else { return nil }
+        // The alarm registration says whether it exists; its Live Activity carries current timing.
+        // A cached local deadline cannot account for a lock-screen Resume action.
+        let mode = Activity<AlarmAttributes<TimerMetadata>>.activities.first {
+            $0.content.state.alarmID == id
+        }?.content.state.mode
         switch alarm.state {
-        case .countdown: return .countdown
-        case .paused: return .paused
+        case .countdown:
+            if case .countdown(let value) = mode { return .countdown(deadline: value.fireDate) }
+            return .countdown(deadline: nil)
+        case .paused:
+            if case .paused(let value) = mode {
+                return .paused(remaining: value.totalCountdownDuration - value.previouslyElapsedDuration)
+            }
+            return .paused(remaining: nil)
         case .alerting: return .alerting
-        default: return .countdown
+        default: return .countdown(deadline: nil)
         }
     }
 

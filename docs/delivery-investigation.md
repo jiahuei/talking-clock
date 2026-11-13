@@ -37,7 +37,7 @@ Record results in the PR before integrating a full session. Remove the launch ar
 - Decide the production background architecture from those results; implement the user-started session and its next-announcement/Stop Live Activity only after that decision. A notification fallback requires an explicit product decision because its behavior differs.
 - Verify actual AlarmKit sound duration and replay behavior for 15/30/60-second cadence on supported OS versions. Until then, the app retains a bounded tune-plus-phrase clip and does not expose a cadence setting it cannot honor.
 - Compare native screenshots at 07:00, 12:00, 18:50 and 23:00 in both appearances. Validate accessibility sizes, VoiceOver focus, Reduce Motion, iPad, landscape and 12/24-hour settings.
-- Validate the final timer alert and its sound after suspension, force-quit, restart/unlock, and system cancellation. Validate external pause/resume reconciliation before offering those controls outside the app.
+- Validate the final timer alert and its sound after suspension, force-quit, restart/unlock, and system cancellation. Validate external pause/resume reconciliation from AlarmKit Live Activity timing, including devices where Live Activities are disabled or their timing is temporarily unavailable.
 - Publish the privacy-policy URL and link it from About before App Review.
 
 ## Native macOS workstream from #4

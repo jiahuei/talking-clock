@@ -39,7 +39,25 @@ public struct Countdown: Codable, Equatable, Sendable {
 
     public mutating func finish(at date: Date) {
         guard state == .running, let deadline, deadline <= date else { return }
-        self.deadline = nil
+        complete()
+    }
+
+    /// System timing is authoritative after a pause/resume from the lock screen or after relaunch.
+    public mutating func applySystemCountdown(deadline: Date) {
+        self.deadline = deadline
+        pausedRemaining = nil
+        state = .running
+    }
+
+    public mutating func applySystemPause(remaining: TimeInterval) {
+        deadline = nil
+        pausedRemaining = max(0, remaining)
+        state = .paused
+    }
+
+    public mutating func complete() {
+        deadline = nil
+        pausedRemaining = nil
         state = .done
     }
 

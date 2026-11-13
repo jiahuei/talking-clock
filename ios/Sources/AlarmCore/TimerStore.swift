@@ -1,7 +1,11 @@
 import Foundation
 import Observation
 
-public enum TimerRegistration: Sendable { case countdown, paused, alerting }
+public enum TimerRegistration: Equatable, Sendable {
+    case countdown(deadline: Date?)
+    case paused(remaining: TimeInterval?)
+    case alerting
+}
 
 @MainActor public protocol TimerScheduling {
     func prepare() async throws
@@ -107,8 +111,16 @@ public enum TimerRegistration: Sendable { case countdown, paused, alerting }
                 } else if countdown.state == .paused {
                     countdown.reset()
                 }
-            } else if alarm == .alerting {
-                countdown.finish(at: .distantFuture)
+            } else {
+                switch alarm {
+                case .countdown(let deadline):
+                    if let deadline { countdown.applySystemCountdown(deadline: deadline) }
+                case .paused(let remaining):
+                    if let remaining { countdown.applySystemPause(remaining: remaining) }
+                case .alerting:
+                    countdown.complete()
+                case nil: break
+                }
             }
             if countdown != previous { persist() }
         } catch { errorMessage = error.localizedDescription }

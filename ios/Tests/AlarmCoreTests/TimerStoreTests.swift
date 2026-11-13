@@ -13,16 +13,16 @@ import XCTest
     }
     func schedule(id: UUID, duration: Int) async throws {
         if fails { throw AlarmFailure.unfinishedChange }
-        registration = .countdown
+        registration = .countdown(deadline: nil)
     }
     func state(id: UUID) throws -> TimerRegistration? { registration }
     func pause(id: UUID) throws {
         if fails { throw AlarmFailure.unfinishedChange }
-        registration = .paused
+        registration = .paused(remaining: nil)
     }
     func resume(id: UUID) throws {
         if fails { throw AlarmFailure.unfinishedChange }
-        registration = .countdown
+        registration = .countdown(deadline: nil)
     }
     func cancel(id: UUID) throws {
         if fails { throw AlarmFailure.unfinishedChange }
@@ -125,4 +125,30 @@ import XCTest
         XCTAssertEqual(store.countdown.duration, 150)
         XCTAssertNil(scheduler.registration)
     }
+    /// Ensures lock-screen pause/resume timing overrides stale local deadlines after returning to the app.
+    func testSystemTimingReconciliation() async {
+        await store.start()
+        scheduler.registration = .paused(remaining: 145.5)
+        store.refresh()
+        XCTAssertEqual(store.countdown.state, .paused)
+        XCTAssertEqual(store.countdown.remaining(at: date), 146)
+        date = date.addingTimeInterval(1000)
+        let deadline = date.addingTimeInterval(140)
+        scheduler.registration = .countdown(deadline: deadline)
+        store.refresh()
+        XCTAssertEqual(store.countdown.state, .running)
+        XCTAssertEqual(store.countdown.deadline, deadline)
+        XCTAssertEqual(store.countdown.remaining(at: date), 140)
+    }
+
+    /// Ensures an externally resumed and completed timer becomes Done even when the app last saw it paused.
+    func testSystemCompletionAfterPausedRelaunch() async {
+        await store.start()
+        store.pause()
+        scheduler.registration = .alerting
+        store.refresh()
+        XCTAssertEqual(store.countdown.state, .done)
+        XCTAssertEqual(store.countdown.remaining(at: date), 0)
+    }
+
 }
