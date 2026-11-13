@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Talking Clock: Halo Ramp reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..600;1,6..72,300..500&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--pageBg:#F1F2F4;--pageInk:#17181C;--focus:#17181C;--serif:"Newsreader",Georgia,serif;--sans:"Geist",system-ui,sans-serif}
+:root[data-theme=dark]{--pageBg:#0B0C10;--pageInk:#F2F1EE;--focus:#F2F1EE}
+/* ---- Shared presentation frame (not part of the app design) ---- */
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.page{max-width:1120px;margin:0 auto;padding:56px 24px 96px}
+.stage{display:flex;flex-wrap:wrap;gap:56px 64px;justify-content:center;margin:48px 0 40px}
+.pw{--s:1;width:calc(390px*var(--s));}
+.pw .box{height:calc(844px*var(--s))}
+.phone{width:390px;height:844px;transform:scale(var(--s));transform-origin:0 0;border-radius:55px;overflow:hidden;position:relative;
+  box-shadow:0 0 0 11px #161616,0 0 0 12px #444,0 50px 90px -40px rgba(0,0,0,.55)}
+.scr{position:absolute;inset:0;overflow:hidden}
+.sb{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;
+  padding:4px 30px 0 50px;font:600 16px/1 -apple-system,"SF Pro Text",system-ui,sans-serif;letter-spacing:-.01em;z-index:5;pointer-events:none}
+.island{position:absolute;top:11px;left:50%;width:124px;height:36px;margin-left:-62px;background:#000;border-radius:20px;z-index:6}
+.home{position:absolute;bottom:8px;left:50%;width:138px;height:5px;margin-left:-69px;border-radius:3px;z-index:6;background:currentColor;opacity:.9}
+.cap{margin-top:22px;text-align:center;font-size:14px;opacity:.6}
+.preview{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;font-size:14px}
+.preview input{width:min(320px,60vw);accent-color:var(--focus)}
+.preview output{min-width:72px;font-variant-numeric:tabular-nums}
+.preview button{padding:7px 14px;border-radius:999px;border:1px solid currentColor;font-size:13px;opacity:.55}
+.preview button[aria-pressed=true]{opacity:1}
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:32px 48px;margin-top:72px;font-size:14px;line-height:1.55}
+.spec h2{font-size:15px;margin-bottom:10px}
+.spec ul{list-style:none}
+.spec li{display:flex;align-items:center;gap:10px;padding:3px 0}
+.sw{width:18px;height:18px;border-radius:5px;flex:none;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
+.spec code{font-size:12.5px;opacity:.7}
+@media (max-width:520px){.pw{--s:.82}}
+@media (max-width:380px){.pw{--s:.74}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---- Additions to the presentation frame for the four-screen designs (11+) ---- */
+.page{max-width:1780px}
+.stage{gap:48px 40px}
+.pw{--s:.86}
+.preview .grp{display:flex;gap:6px;align-items:center}
+.preview .sep{width:1px;height:22px;background:currentColor;opacity:.2;margin:0 6px}
+.lede{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px 48px;margin-top:22px;font-size:15px;line-height:1.55;max-width:1100px}
+.lede b{display:block;margin-bottom:4px}
+@media (max-width:520px){.pw{--s:.82}}
+@media (max-width:380px){.pw{--s:.74}}
+
+/* Compact layout: phones scale to fit the window (see fitPhones) */
+.page{max-width:1560px;padding:28px 24px 72px}
+.page .head h1{font-size:40px}
+.page .head p{font-size:14px;line-height:1.45;max-width:120ch;margin-top:6px}
+.preview{margin-top:14px}
+.preview+.preview{margin-top:10px}
+.stage{gap:28px 24px;margin:22px 0 24px}
+.stage .pw{--s:var(--fit,.6)}
+.cap{margin-top:12px;font-size:13px}
+.preview .lab{opacity:.7}
+.preview.tools input[type=time]{width:auto;font:inherit;font-size:14px;padding:5px 10px;border-radius:10px;border:1px solid currentColor;background:transparent;color:inherit;color-scheme:light dark;font-variant-numeric:tabular-nums}
+:root[data-theme=dark] .tools input[type=time]{color-scheme:dark}
+.tstep{display:flex;align-items:center;gap:6px}
+.preview .tstep button{width:34px;height:32px;padding:0;display:grid;place-items:center;opacity:.85;touch-action:none;user-select:none;-webkit-user-select:none}
+.preview .tstep button:hover{opacity:1}
+/* Snoozed sub-alarm */
+.list li.snz{justify-content:flex-start;gap:10px;padding:9px 14px 11px 18px;background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.list li+li.snz{border-top:1px dashed var(--hair)}
+.list li.snz>div{flex:1}
+.snz svg{flex:none;color:var(--acc2)}
+.snz .st2{display:block;font-size:15px;font-weight:500}
+.now{font-weight:600;color:var(--acc2)}
+.mini{height:32px;padding:0 13px;border-radius:999px;font-size:13.5px;font-weight:500;background:var(--hair);flex:none}
+/* System confirmation sheet */
+.sheet-wrap{position:absolute!important;inset:0;z-index:7;display:flex;align-items:flex-end;padding:0 10px 34px;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s}
+.sheet-wrap.open{opacity:1;pointer-events:auto}
+.sheet{width:100%;transform:translateY(24px);transition:transform .25s ease}
+.open .sheet{transform:none}
+.sheet .g{border-radius:16px;overflow:hidden;background:rgba(246,246,248,.96);margin-top:8px;text-align:center}
+.sh-t{font:600 13.5px/1.3 -apple-system,system-ui,sans-serif;color:#6D6D72;padding:14px 16px 2px}
+.sh-m{font:13px/1.35 -apple-system,system-ui,sans-serif;color:#6D6D72;padding:2px 16px 14px}
+.sh-b{display:block;width:100%;height:56px;font:400 19px -apple-system,system-ui,sans-serif;color:#007AFF;border-top:1px solid rgba(60,60,67,.2)}
+.sh-b.destr{color:#FF3B30}
+.sh-b.bold{font-weight:600;border-top:0}
+:root[data-theme=dark] .sheet .g{background:rgba(44,44,46,.96)}
+:root[data-theme=dark] .sh-t,:root[data-theme=dark] .sh-m{color:#9A9AA0}
+:root[data-theme=dark] .sh-b{color:#0A84FF;border-color:rgba(84,84,88,.6)}
+:root[data-theme=dark] .sh-b.destr{color:#FF453A}
+/* Tighter alarm screen so the sub-alarm and snooze setting fit */
+.alarms .next{padding:14px 18px;margin-bottom:10px}
+.alarms .next .big{font-size:54px}
+.alarms .next .ital{font-size:18px;margin-top:4px}
+.alarms .list{margin-bottom:10px;overflow:hidden}   /* clip row tints to the rounded corners */
+.alarms .list li{padding:10px 16px}
+.alarms .list .t{font-size:34px}
+.alarms .card{padding:12px}
+.alarms .card .lbl{margin-bottom:6px}
+.alarms .card .seg button{height:34px}
+.alarms .card .stepper{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 0 0 4px}
+.alarms .card .stepper .lbl{margin:0}
+.stp{display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:var(--hair)}
+.stp button{width:40px;height:32px;border-radius:999px;display:grid;place-items:center}
+.stp button:disabled{opacity:.3;cursor:default}
+.stp output{min-width:64px;text-align:center;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.spec ul.stops li{display:block}
+.strip{position:relative;height:28px;border-radius:8px}
+.strip .mark{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;border-radius:2px;background:var(--pageInk);box-shadow:0 0 0 2px var(--pageBg)}
+.stops-dim{opacity:.45}
+body{background:var(--pageBg);color:var(--pageInk);font-family:var(--sans);transition:background .3s,color .3s}
+.head h1{font-family:var(--serif);font-weight:300;font-size:84px;line-height:.95;letter-spacing:-.02em}
+.head p{max-width:62ch;margin-top:14px;font-size:17px;line-height:1.55;opacity:.72}
+.phone{box-shadow:0 0 0 11px #111,0 0 0 12px #3c3c40,0 50px 90px -40px rgba(0,0,0,.6)}
+
+/* Tokens are set per screen by JS: --a --b --c (sky), --fg, --acc, --onacc */
+.scr{--fg2:color-mix(in srgb,var(--fg) 58%,transparent);--hair:color-mix(in srgb,var(--fg) 12%,transparent);
+  color:var(--fg);background:var(--a);display:flex;flex-direction:column;padding:62px 20px 0}   /* no colour transition: text switches in one step */
+.scr.full{padding-bottom:40px}
+.sky{position:absolute;inset:-15%;pointer-events:none;
+  background:radial-gradient(46% 34% at 18% 16%,var(--b),transparent 72%),radial-gradient(50% 38% at 86% 66%,var(--c),transparent 72%),var(--a);
+  animation:drift 22s ease-in-out infinite alternate;transition:background .8s}
+@keyframes drift{to{transform:translate(-4%,3%) scale(1.05)}}
+.sky{animation-duration:34s}
+.scr>*:not(.sky):not(.sb):not(.island):not(.home){position:relative}
+.glass{background:var(--glass);border:1px solid var(--edge);-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);box-shadow:var(--shadow)}
+.serif{font-family:var(--serif)}
+
+.top{display:flex;justify-content:space-between;align-items:center;height:40px;font-size:15px;font-weight:500;color:var(--fg2)}
+#c-date,.ring .top .bell{font-size:20px;font-weight:500;letter-spacing:-.01em;color:var(--fg)}   /* top-row headers: Clock date, ringing "Alarm" */
+.ring .top .bell{gap:8px}
+.ring .top .bell svg{width:19px;height:19px}
+.hd{display:flex;justify-content:space-between;align-items:flex-end;margin:2px 2px 18px}
+.hd h2{font-family:var(--serif);font-weight:300;font-size:46px;line-height:1;letter-spacing:-.02em}
+.hd .st{font-size:15px;color:var(--fg2);padding-bottom:6px}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center}
+
+/* halo: ring + glow */
+.halo{position:relative;display:grid;place-items:center;margin:0 auto;border-radius:50%}
+.halo svg{position:absolute;inset:0;transform:rotate(-90deg);overflow:visible}
+.halo .trk{stroke:var(--hair)}
+.halo .pro{stroke:var(--acc);transition:stroke-dashoffset .3s linear}
+.halo .glow{position:absolute;inset:-22%;border-radius:50%;background:radial-gradient(closest-side,var(--acc),transparent);opacity:0;transition:opacity .6s;pointer-events:none}
+.speaking .halo .glow{opacity:.30;animation:breathe 1.6s ease-in-out infinite alternate}
+.ring .halo .glow{opacity:.22;animation:breathe .9s ease-in-out infinite alternate}
+.ring.speaking .halo .glow{opacity:.36}
+@keyframes breathe{from{transform:scale(.86)}to{transform:scale(1.04)}}
+.halo .in{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
+.big{font-family:var(--serif);font-weight:280;line-height:.9;letter-spacing:-.035em;font-variation-settings:"opsz" 72;font-variant-numeric:lining-nums tabular-nums}
+.ital{font-family:var(--serif);font-style:italic;font-weight:350}
+
+/* controls */
+.card{border-radius:30px;padding:14px}
+.lbl{font-size:13.5px;color:var(--fg2);margin:0 4px 8px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--hair)}
+.seg button{flex:1;height:36px;border-radius:999px;font-size:14px;font-weight:500;color:var(--fg2);transition:background .2s,color .2s}
+.seg button[aria-pressed=true]{background:var(--fg);color:var(--a)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.status{font-size:15px;line-height:1.3;padding-left:4px}
+.status small{display:block;font-size:13.5px;color:var(--fg2)}
+.act{width:58px;height:58px;border-radius:50%;background:var(--acc);color:var(--onacc);display:grid;place-items:center;flex:none}
+.btn{height:60px;border-radius:999px;font-size:17px;font-weight:600}
+.btn.pri{background:var(--acc);color:var(--onacc)}
+[role=switch]{width:52px;height:32px;border-radius:999px;background:var(--hair);position:relative;transition:background .2s;flex:none}
+[role=switch]::after{content:"";position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .2s}
+[role=switch][aria-checked=true]{background:var(--acc)}
+[role=switch][aria-checked=true]::after{transform:translateX(20px)}
+
+/* floating tab bar */
+.tabs{display:flex;gap:2px;padding:5px;border-radius:999px;margin:12px 16px 34px}
+.tabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 5px;border-radius:999px;font-size:11px;font-weight:500;color:var(--fg2)}
+.tabs a[aria-current=page]{background:var(--hair);color:var(--acc2)}
+
+/* clock */
+.clock .halo{width:304px;height:304px;margin-top:auto}
+.clock .big{font-size:112px}
+.clock .ap{font-size:24px;margin-top:4px}
+.clock .sent{font-size:24px;line-height:1.2;text-align:center;margin:20px auto auto;max-width:12em}
+.clock .card .row{margin-top:12px}
+
+/* alarm list */
+.next{border-radius:30px;padding:18px 20px;margin-bottom:12px}
+.next .big{font-size:64px}
+.next .big small{font-size:24px;margin-left:4px;letter-spacing:0}
+.next .ital{font-size:20px;margin-top:6px}
+.list{border-radius:26px;list-style:none;margin-bottom:12px}
+.list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px}
+.list li+li{border-top:1px solid var(--hair)}
+.list .t{font-family:var(--serif);font-weight:300;font-size:38px;line-height:1;letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums;transition:opacity .2s}
+.list .t small{font-size:17px;margin-left:3px;letter-spacing:0}
+.list .d{display:block;font-size:13.5px;color:var(--fg2);margin-top:3px}
+.list li.off .t{opacity:.4}
+.alarms .card{margin-top:auto}
+
+/* ringing */
+.ring .halo{width:304px;height:304px}
+.ring .big{font-size:112px}
+.ring .label{font-size:34px;text-align:center;margin:auto 0 26px}
+.ring .sent{font-size:18px;color:var(--fg2);text-align:center;margin-top:30px}
+.ring .note{font-size:14px;color:var(--fg2);text-align:center;margin:6px 0 auto}
+.ring .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bell{display:inline-flex;align-items:center;gap:7px;color:var(--fg)}
+
+/* timer */
+.timer .halo{width:272px;height:272px;margin-top:auto}   /* ring and chips sit centred in the free space */
+.timer .big{font-size:92px;white-space:nowrap}
+/* Small i button on the Clock screen */
+.top .icon-btn.info{width:36px;height:36px;margin-right:-4px;color:var(--fg)}
+/* About: a standard system sheet (large detent), system colours */
+.about-wrap{position:absolute!important;inset:0;z-index:8;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s}
+.about-wrap.open{opacity:1;pointer-events:auto}
+.about{position:absolute;left:0;right:0;top:58px;bottom:0;border-radius:34px 34px 0 0;background:#F2F2F7;color:#000;
+  font-family:-apple-system,system-ui,sans-serif;transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);overflow:auto}
+.open .about{transform:none}
+.ab-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 18px 8px}
+.ab-head h3{font-size:17px;font-weight:600}
+.ab-head button{justify-self:end;font-size:17px;font-weight:600;color:#007AFF;padding:6px 4px}
+.ab-body{padding:6px 16px 40px}
+.ab-h{font-size:13px;color:#6D6D72;margin:18px 16px 7px}
+.ab-grp{background:#fff;border-radius:12px;overflow:hidden}
+.ab-grp>*{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;font-size:15.5px;line-height:1.35}
+.ab-grp>*+*{border-top:.5px solid rgba(60,60,67,.29)}
+.ab-link{color:#007AFF;text-decoration:none}
+.ab-link svg{color:rgba(60,60,67,.3)}
+:root[data-theme=dark] .about{background:#1C1C1E;color:#fff}
+:root[data-theme=dark] .ab-grp{background:#2C2C2E}
+:root[data-theme=dark] .ab-h{color:#8E8E93}
+:root[data-theme=dark] .ab-head button,:root[data-theme=dark] .ab-link{color:#0A84FF}
+:root[data-theme=dark] .ab-grp>*+*{border-color:rgba(84,84,88,.6)}
+/* Custom duration picker (iOS-style wheels) */
+.wheelbox{padding-bottom:0}
+.wheels{position:relative;display:flex;align-items:center;justify-content:center;gap:2px;height:170px;margin:4px 8px 0;
+  font-family:-apple-system,system-ui,sans-serif;color:#000;
+  -webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+.wheels .band{position:absolute;left:0;right:0;top:50%;height:34px;margin-top:-17px;border-radius:9px;background:rgba(120,120,128,.14);pointer-events:none}
+.wcol{position:relative;width:44px;height:170px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;padding:68px 0;outline:none;overscroll-behavior:contain}
+.wcol::-webkit-scrollbar{display:none}
+.wcol:focus-visible{box-shadow:inset 0 0 0 2px #007AFF;border-radius:8px}
+.wcol div{height:34px;line-height:34px;text-align:right;font-size:21px;font-variant-numeric:tabular-nums;scroll-snap-align:center;padding-right:4px}
+.wu{width:46px;font-size:15px;font-weight:600;padding-left:2px}
+:root[data-theme=dark] .wheels{color:#fff}
+:root[data-theme=dark] .wheels .band{background:rgba(120,120,128,.32)}
+#tw-set:disabled{opacity:.35;cursor:default}
+.timer .of{font-size:20px;margin-top:6px;color:var(--fg2)}
+.chips{display:flex;gap:5px;justify-content:center;margin:20px 0 auto}
+.chips button{height:36px;padding:0 10px;border-radius:999px;font-size:13.5px;white-space:nowrap;font-weight:500;background:var(--hair);transition:background .2s,color .2s}
+.chips button[aria-pressed=true]{background:var(--fg);color:var(--a)}
+.chips button:disabled:not([aria-pressed=true]){opacity:.45;cursor:default}
+.timer .card{margin-top:16px}
+.timer .btns{display:grid;grid-template-columns:1fr 1.6fr;gap:10px;margin-top:12px}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="head">
+    <h1>Halo Ramp</h1>
+    <p>Reference design for the Clock, Alarm and Timer redesign. Everything inside the phones is the design to build. The controls above the phones (appearance, ring the alarm, preview time, exact time) are review tools only. The alarm in ringing state follows the time you're viewing; snooze it to see the snoozed sub-alarm in the Alarms list.</p>
+  </header>
+
+  <div class="preview"><div class="grp" role="group" aria-label="Appearance"><button data-theme-set="light">Light</button><button data-theme-set="dark">Dark</button></div><span class="sep"></span><button data-ring-start>Ring the alarm</button><span class="sep"></span><label for="scrub">Preview time</label><input id="scrub" type="range" min="0" max="1439" step="1"><output id="scrubOut"></output><button id="live" aria-pressed="true">Live</button></div>
+  <div class="preview tools">
+    
+    <label for="exact" class="lab">Exact time</label><div class="tstep"><button data-tstep="-1" aria-label="One minute earlier" title="One minute earlier (hold to repeat)"><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 6h7"/></svg></button><input id="exact" type="time" step="60"><button data-tstep="1" aria-label="One minute later" title="One minute later (hold to repeat)"><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 6h7M6 2.5v7"/></svg></button></div>
+  </div>
+
+  <div class="stage">
+    <!-- CLOCK -->
+    <div class="pw"><div class="box"><div class="phone"><div class="scr clock sky-host" data-src="clock">
+      <div class="sky"></div>
+      <div class="sb"><span class="sbt"></span><svg width="72" height="13" viewBox="0 0 72 13" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="5" rx="1"/><rect x="5" y="5.5" width="3" height="7.5" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/><path d="M29.5 3.6a10 10 0 0 1 13 0l-1.5 1.7a7.7 7.7 0 0 0-10 0zM32 6.4a6.2 6.2 0 0 1 8 0l-1.5 1.7a3.9 3.9 0 0 0-5 0zM36 12l-2-2.2a2.9 2.9 0 0 1 4 0z"/><rect x="46.5" y=".5" width="22" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="48.5" y="2.5" width="16" height="8" rx="2"/><rect x="69.5" y="4.5" width="1.8" height="4" rx=".9" opacity=".4"/></svg></div><div class="island"></div>
+      <div class="top"><span id="c-date"></span><button class="icon-btn info glass" id="c-info" aria-label="About" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="7.3"/><path d="M9 8.2v4.6"/><circle cx="9" cy="5.6" r=".9" fill="currentColor" stroke="none"/></svg></button></div>
+      <button class="halo" data-say-clock aria-label="Say the time">
+        <span class="glow"></span>
+        <svg viewBox="0 0 304 304" aria-hidden="true"><circle class="trk" cx="152" cy="152" r="150" fill="none" stroke-width="2"/><circle class="pro" id="c-ring" cx="152" cy="152" r="150" fill="none" stroke-width="3" stroke-linecap="round" stroke-dasharray="942.48"/></svg>
+        <span class="in"><span class="big" id="c-time"></span><span class="ital ap" id="c-ap"></span></span>
+      </button>
+      <p class="ital sent" id="c-sent" aria-live="polite"></p>
+      <div class="card glass">
+        <p class="lbl">Speak the time every</p>
+        <div class="seg" role="group" aria-label="Speak the time every"><button data-clock-every="5">5 min</button><button data-clock-every="15">15 min</button><button data-clock-every="30">30 min</button><button data-clock-every="60">1 hour</button><button data-clock-every="0">Off</button></div>
+        <div class="row"><p class="status" id="c-status"></p><button class="act" data-say-clock id="c-say" aria-label="Say the time"></button></div>
+      </div>
+      <!--TABS:clock-->
+      <div class="about-wrap" id="about" aria-hidden="true"><div class="about" role="dialog" aria-modal="true" aria-labelledby="ab-t">
+        <div class="ab-head"><span></span><h3 id="ab-t">About</h3><button id="ab-done">Done</button></div>
+        <div class="ab-body">
+          <p class="ab-h">How it speaks</p>
+          <div class="ab-grp">
+            <p>Clock, Alarm and Timer can each say the time aloud at the interval you choose, even with your iPhone locked.</p>
+            <p>An alarm plays its tune and says its time until you stop or snooze it.</p>
+            <p>Use your iPhone's alarm volume, and test an alarm with your iPhone locked before relying on it.</p>
+          </div>
+          <p class="ab-h">Private by design</p>
+          <div class="ab-grp">
+            <p>Everything stays on your iPhone. No account, no tracking.</p>
+            <a class="ab-link" href="#privacy-policy" data-placeholder>Privacy Policy<svg width="8" height="13" viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5l5 5-5 5"/></svg></a>
+            <a class="ab-link" href="https://github.com/jiahuei/ios-talking-clock/issues" target="_blank" rel="noopener">Support<svg width="8" height="13" viewBox="0 0 8 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5l5 5-5 5"/></svg></a>
+          </div>
+        </div>
+      </div></div>
+      <div class="home"></div>
+    </div></div></div><p class="cap">Clock</p></div>
+
+    <!-- ALARMS -->
+    <div class="pw"><div class="box"><div class="phone"><div class="scr alarms sky-host">
+      <div class="sky"></div>
+      <div class="sb"><span class="sbt"></span><svg width="72" height="13" viewBox="0 0 72 13" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="5" rx="1"/><rect x="5" y="5.5" width="3" height="7.5" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/><path d="M29.5 3.6a10 10 0 0 1 13 0l-1.5 1.7a7.7 7.7 0 0 0-10 0zM32 6.4a6.2 6.2 0 0 1 8 0l-1.5 1.7a3.9 3.9 0 0 0-5 0zM36 12l-2-2.2a2.9 2.9 0 0 1 4 0z"/><rect x="46.5" y=".5" width="22" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="48.5" y="2.5" width="16" height="8" rx="2"/><rect x="69.5" y="4.5" width="1.8" height="4" rx=".9" opacity=".4"/></svg></div><div class="island"></div>
+      <div class="hd"><h2>Alarms</h2><button class="icon-btn glass" aria-label="Add alarm"><svg width="18" height="18" viewBox="0 0 18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 2v14M2 9h14"/></svg></button></div>
+      <div class="next glass"><p class="lbl" style="margin:0 0 12px">Next alarm</p><p class="big" id="a-time"></p><p class="ital" id="a-sub"></p></div>
+      <ul class="list glass" id="a-list"></ul>
+      <div class="card glass">
+        <p class="lbl">While ringing, say the time every</p>
+        <div class="seg" role="group" aria-label="While ringing, say the time every"><button data-ring-every="15">15 s</button><button data-ring-every="30">30 s</button><button data-ring-every="60">1 min</button></div>
+        <div class="stepper"><p class="lbl">Snooze for</p>
+          <div class="stp" role="group" aria-label="Snooze length">
+            <button data-snooze-step="-1" aria-label="Shorter snooze"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7h8"/></svg></button>
+            <output id="snz-val" aria-live="polite"></output>
+            <button data-snooze-step="1" aria-label="Longer snooze"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7h8M7 3v8"/></svg></button>
+          </div></div>
+      </div>
+      <!--TABS:alarm-->
+      <div class="sheet-wrap" id="sheet" aria-hidden="true"><div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="sh-t" aria-describedby="sh-m">
+        <div class="g"><p class="sh-t" id="sh-t"></p><p class="sh-m" id="sh-m"></p><button class="sh-b destr" id="sh-yes">Cancel snooze</button></div>
+        <div class="g"><button class="sh-b bold" id="sh-no">Keep snooze</button></div>
+      </div></div>
+      <div class="home"></div>
+    </div></div></div><p class="cap">Alarms</p></div>
+
+    <!-- RINGING -->
+    <div class="pw"><div class="box"><div class="phone"><div class="scr ring full sky-host" data-src="alarm" data-ringing>
+      <div class="sky"></div>
+      <div class="sb"><span class="sbt"></span><svg width="72" height="13" viewBox="0 0 72 13" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="5" rx="1"/><rect x="5" y="5.5" width="3" height="7.5" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/><path d="M29.5 3.6a10 10 0 0 1 13 0l-1.5 1.7a7.7 7.7 0 0 0-10 0zM32 6.4a6.2 6.2 0 0 1 8 0l-1.5 1.7a3.9 3.9 0 0 0-5 0zM36 12l-2-2.2a2.9 2.9 0 0 1 4 0z"/><rect x="46.5" y=".5" width="22" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="48.5" y="2.5" width="16" height="8" rx="2"/><rect x="69.5" y="4.5" width="1.8" height="4" rx=".9" opacity=".4"/></svg></div><div class="island"></div>
+      <div class="top"><span class="bell"><svg width="16" height="16" viewBox="0 0 18 18" fill="currentColor"><path d="M9 1.5a1 1 0 0 1 1 1v.6a5 5 0 0 1 4 4.9v3.5l1.5 2v.5h-13V13.5l1.5-2V8a5 5 0 0 1 4-4.9v-.6a1 1 0 0 1 1-1zM7 15h4a2 2 0 0 1-4 0z"/></svg>Alarm</span></div>
+      <p class="ital label" id="r-label"></p>
+      <div class="halo">
+        <span class="glow"></span>
+        <svg viewBox="0 0 304 304" aria-hidden="true"><circle class="trk" cx="152" cy="152" r="150" fill="none" stroke-width="2"/><circle cx="152" cy="152" r="150" fill="none" stroke="var(--acc)" stroke-width="3"/></svg>
+        <span class="in"><span class="big" id="r-time"></span><span class="ital ap" id="r-ap" style="font-size:22px;margin-top:4px"></span></span>
+      </div>
+      <p class="sent" id="r-sent"></p>
+      <p class="note" id="r-note"></p>
+      <div class="btns"><button class="btn glass" data-ring-snooze id="r-snooze">Snooze 9 min</button><button class="btn pri" data-ring-stop>Stop</button></div>
+      <div class="home"></div>
+    </div></div></div><p class="cap">Alarm ringing</p></div>
+
+    <!-- TIMER -->
+    <div class="pw"><div class="box"><div class="phone"><div class="scr timer sky-host" data-src="timer">
+      <div class="sky"></div>
+      <div class="sb"><span class="sbt"></span><svg width="72" height="13" viewBox="0 0 72 13" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="5" rx="1"/><rect x="5" y="5.5" width="3" height="7.5" rx="1"/><rect x="10" y="3" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="13" rx="1"/><path d="M29.5 3.6a10 10 0 0 1 13 0l-1.5 1.7a7.7 7.7 0 0 0-10 0zM32 6.4a6.2 6.2 0 0 1 8 0l-1.5 1.7a3.9 3.9 0 0 0-5 0zM36 12l-2-2.2a2.9 2.9 0 0 1 4 0z"/><rect x="46.5" y=".5" width="22" height="12" rx="3.6" fill="none" stroke="currentColor" opacity=".4"/><rect x="48.5" y="2.5" width="16" height="8" rx="2"/><rect x="69.5" y="4.5" width="1.8" height="4" rx=".9" opacity=".4"/></svg></div><div class="island"></div>
+      <div class="hd"><h2>Timer</h2><span class="st" id="t-state"></span></div>
+      <div class="halo">
+        <span class="glow"></span>
+        <svg viewBox="0 0 272 272" aria-hidden="true"><circle class="trk" cx="136" cy="136" r="134" fill="none" stroke-width="2"/><circle class="pro" id="t-ring" cx="136" cy="136" r="134" fill="none" stroke-width="3" stroke-linecap="round" stroke-dasharray="841.95"/></svg>
+        <span class="in"><span class="big" id="t-time"></span><span class="ital of" id="t-of"></span></span>
+      </div>
+      <div class="chips" role="group" aria-label="Timer length"><button data-timer-set="60">1 min</button><button data-timer-set="300">5 min</button><button data-timer-set="600">10 min</button><button data-timer-set="1500">25 min</button><button id="t-custom" aria-haspopup="dialog">Custom</button></div>
+      <div class="card glass">
+        <p class="lbl">Say what's left every</p>
+        <div class="seg" role="group" aria-label="Say what's left every"><button data-timer-every="30">30 s</button><button data-timer-every="60">1 min</button><button data-timer-every="300">5 min</button></div>
+      </div>
+      <div class="btns"><button class="btn glass" data-timer-cancel>Reset</button><button class="btn pri" data-timer-toggle id="t-go">Start</button></div>
+      <!--TABS:timer-->
+      <div class="sheet-wrap" id="tsheet" aria-hidden="true"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tw-t">
+        <div class="g wheelbox">
+          <p class="sh-t" id="tw-t">Set timer</p>
+          <div class="wheels">
+            <div class="band" aria-hidden="true"></div>
+            <div class="wcol" data-unit="h" data-max="23" tabindex="0" role="spinbutton" aria-label="Hours" aria-valuemin="0" aria-valuemax="23"></div><span class="wu">hours</span>
+            <div class="wcol" data-unit="m" data-max="59" tabindex="0" role="spinbutton" aria-label="Minutes" aria-valuemin="0" aria-valuemax="59"></div><span class="wu">min</span>
+            <div class="wcol" data-unit="s" data-max="59" tabindex="0" role="spinbutton" aria-label="Seconds" aria-valuemin="0" aria-valuemax="59"></div><span class="wu">sec</span>
+          </div>
+          <p class="sh-m" id="tw-sum" aria-live="polite"></p>
+          <button class="sh-b bold" id="tw-set">Set timer</button>
+        </div>
+        <div class="g"><button class="sh-b" id="tw-cancel">Cancel</button></div>
+      </div></div>
+      <div class="home"></div>
+    </div></div></div><p class="cap">Timer</p></div>
+  </div>
+
+  <section class="spec">
+    <div style="grid-column:1/-1"><h2 id="stripTitle">Sky through the day</h2>
+      <p style="margin-bottom:8px">Light</p><div class="strip" id="stripL"><i class="mark"></i></div>
+      <p style="margin:12px 0 8px">Dark</p><div class="strip" id="stripD"><i class="mark"></i></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.6;margin-top:6px"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+    </div>
+    <div><h2>Colour stops (light)</h2><ul class="stops">
+      <li>00:00–04:40 Night <code>#0E1730 → #0B1226</code></li>
+      <li>05:10 indigo <code>#1E1B4B</code>, violet and magenta light</li>
+      <li>05:40 plum <code>#3E2A6E → #7A3D73</code>, coral on the horizon</li>
+      <li>06:00 sunrise coral <code>#F6B79E → #F59A86</code>, gold and pink</li>
+      <li>07:00 dawn <code>#FBEFEA</code>, peach and lavender</li>
+      <li>08:30–16:00 day <code>#EEF5FB</code>, sky blue and mint</li>
+      <li>17:00 dusk <code>#F7ECF1</code>, pink and lilac</li>
+      <li>18:00 golden hour <code>#F3C1B0 → #F29E8E</code>, gold and rose</li>
+      <li>18:40 sunset <code>#E48A84 → #D96A78</code></li>
+      <li>19:00 plum dusk <code>#4A2C70 → #6B3366</code>, rose and ember</li>
+      <li>19:45 indigo <code>#241C50</code></li>
+      <li>21:00 Night again</li>
+    </ul></div>
+    <div><h2>Blending</h2><ul>
+      <li>Blended in OKLCH (keeps saturation, never greys) with a smoothstep ease inside each ramp</li>
+      <li>Dark-to-pale crossings take 20 min and pass through muted plum, rose and coral (twilight chroma ×0.50)</li>
+      <li>Displayed values ease toward the target with a 0.5 s time constant</li>
+      <li>Text is dark or light, never grey: it switches near sky luminance 0.21 (0.204 / 0.222 with hysteresis), in one step together with the glass</li>
+      <li>Behind light text, glass gains a navy scrim that keeps panels dark enough for small text</li>
+      <li>Secondary text rises from 58% opacity as needed to keep 4.5:1 on sky and glass</li>
+      <li>Dark uses the same stops, near black with lights at 12–20%</li>
+    </ul></div>
+    <div><h2>Type</h2><ul>
+      <li>Newsreader, optical size 72, weight 280 for times (clock and ringing 112 pt, timer 92, list 38)</li>
+      <li>Newsreader italic 350 for sentences, labels and am/pm</li>
+      <li>Geist 400–600, 11–17 pt for controls</li>
+    </ul></div>
+    <div><h2>Behaviour</h2><ul>
+      <li>Clock ring fills to the next spoken time; timer ring empties as time runs out</li>
+      <li>Speaking: an accent glow breathes behind the ring (1.6 s); ringing pulses faster (0.9 s)</li>
+      <li>The sky drifts slowly, over 34 s</li>
+      <li>Selected options use the text colour; accent is kept for progress, toggles and the main action</li>
+    </ul></div>
+  </section>
+</main>
+<script>
+/* ---- Clock / Alarm / Timer behaviour ----
+   Voice: the browser's Web Speech API (speechSynthesis). Chime and alarm tune: Web Audio oscillators.
+   On iOS use AVSpeechSynthesizer and pre-rendered clips; see the issue for the background-speech plan. */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const ONES = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+const TENS = ["","","twenty","thirty","forty","fifty"];
+const num = n => n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? "-" + ONES[n % 10] : "");
+const h12 = h => h % 12 || 12;
+const pad = n => String(n).padStart(2, "0");
+const ampm = h => h < 12 ? "am" : "pm";
+
+const S = {
+  live: true, mins: 0, theme: "light",
+  clock: { every: 15, said: "" },                         // minutes, 0 = off
+  alarms: [
+    { h: 6, m: 30, label: "Run", days: "Weekdays", on: true },
+    { h: 7, m: 15, label: "Wake up", days: "Every day", on: true },
+    { h: 9, m: 30, label: "Market", days: "Saturday", on: false },
+  ],
+  ringAlarm: 1, ringEvery: 30, ringing: false, ringLastSaid: 0, ringLastTune: 0, // seconds
+  timer: { total: 300, left: 300, running: false, end: 0, every: 60, lastSaid: 300, done: false },
+  speaking: null,                                         // "clock" | "alarm" | "timer" | null
+};
+
+function current() {
+  const d = new Date();
+  if (!S.live) d.setHours(Math.floor(S.mins / 60), S.mins % 60, 0, 0);
+  return d;
+}
+const partOfDay = h => h < 5 ? "at night" : h < 12 ? "in the morning" : h < 17 ? "in the afternoon" : h < 21 ? "in the evening" : "at night";
+/* "quarter to five", "seven fifteen", "nine oh five", "six o'clock" */
+function spokenTime(h, m) {
+  const H = num(h12(h)), N = num(h12(h + 1));
+  if (m === 0) return H + " o'clock";
+  if (m === 15) return "quarter past " + H;
+  if (m === 30) return "half past " + H;
+  if (m === 45) return "quarter to " + N;
+  if (m < 10) return H + " oh " + num(m);
+  return H + " " + num(m);
+}
+const timePhrase = (h, m) => "It's " + spokenTime(h, m) + " " + partOfDay(m === 45 ? (h + 1) % 24 : h) + ".";
+const clockPhrase = d => timePhrase(d.getHours(), d.getMinutes());
+const alarmPhrase = a => timePhrase(a.h, a.m) + " " + a.label + ".";
+function timerPhrase(sec) {
+  if (sec <= 0) return "Time's up.";
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60, p = [];
+  if (h) p.push(num(h) + (h === 1 ? " hour" : " hours"));
+  if (m) p.push(num(m) + (m === 1 ? " minute" : " minutes"));
+  if (s) p.push(num(s) + (s === 1 ? " second" : " seconds"));
+  const t = p.join(" "); return t[0].toUpperCase() + t.slice(1) + " left.";
+}
+const fmtTimer = sec => { sec = Math.max(0, sec); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return { mm: pad(h ? h * 60 + m : m), ss: pad(s), text: (h ? h + ":" + pad(m) : m) + ":" + pad(s) }; };
+const everyLabel = s => s < 60 ? s + " s" : s % 60 ? Math.floor(s / 60) + " min " + s % 60 + " s" : s / 60 + " min";
+
+/* Clock: next announcement in minutes from midnight (may exceed 1440). */
+function clockNext(d) { const mm = d.getHours() * 60 + d.getMinutes(); return S.clock.every ? (Math.floor(mm / S.clock.every) + 1) * S.clock.every : null; }
+function clockProgress(d) { if (!S.clock.every) return 0; const mm = d.getHours() * 60 + d.getMinutes(); return ((mm % S.clock.every) + d.getSeconds() / 60) / S.clock.every; }
+function clockStatus(d) {
+  const n = clockNext(d); if (n === null) return { a: "Speaking is off", b: "Tap the time to hear it" };
+  const h = Math.floor(n / 60) % 24, m = n % 60, diff = n - (d.getHours() * 60 + d.getMinutes());
+  return { a: "Next at " + h12(h) + ":" + pad(m) + " " + ampm(h), b: "in " + (diff < 60 ? diff + " min" : Math.floor(diff / 60) + " h" + (diff % 60 ? " " + diff % 60 + " min" : "")) };
+}
+/* Alarms: next enabled alarm after d (days are illustrative, so every enabled alarm is treated as daily). */
+function nextAlarm(d) {
+  const mm = d.getHours() * 60 + d.getMinutes(); let best = null;
+  S.alarms.forEach((a, i) => { if (!a.on) return; let diff = a.h * 60 + a.m - mm; if (diff <= 0) diff += 1440; if (!best || diff < best.diff) best = { i, a, diff }; });
+  return best;
+}
+const inText = diff => "in " + (diff < 60 ? diff + " min" : Math.floor(diff / 60) + " h" + (diff % 60 ? " " + diff % 60 + " min" : ""));
+
+/* ---- Audio ---- */
+let AC = null;
+const ac = () => { const A = window.AudioContext || window.webkitAudioContext; if (!AC && A) AC = new A(); if (AC && AC.state === "suspended") AC.resume(); return AC; };
+function tones(notes, gap, len, vol) {
+  return new Promise(r => {
+    const a = ac(); if (!a) return r();
+    notes.forEach((f, i) => {
+      const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + i * gap;
+      o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(a.destination);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.015); g.gain.exponentialRampToValueAtTime(0.001, t + len);
+      o.start(t); o.stop(t + len + 0.05);
+    });
+    setTimeout(r, (notes.length - 1) * gap * 1000 + len * 600);
+  });
+}
+const chime = () => tones([880, 660], 0.22, 0.6, 0.16);
+const tune = () => tones([784, 988, 1175, 988, 784, 988, 1175, 1568], 0.16, 0.3, 0.12);
+
+let tok = 0;
+async function speak(text, src, pre) {
+  const my = ++tok;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  S.speaking = src; window.onSpeakStart && onSpeakStart(src, text); paint();
+  if (pre) await pre();
+  if (my !== tok) return;
+  const end = () => { if (my === tok) endSpeech(); };
+  if ("speechSynthesis" in window) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.onend = end; u.onerror = end;
+    u.onboundary = e => window.onBoundary && onBoundary(src, e.charIndex);
+    speechSynthesis.speak(u); setTimeout(end, 9000);
+  } else setTimeout(end, 2600);
+}
+function endSpeech() {
+  tok++; const was = S.speaking; S.speaking = null;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  window.onSpeakEnd && onSpeakEnd(was); paint();
+}
+
+/* ---- Actions ---- */
+function sayClock() { if (S.speaking === "clock") return endSpeech(); speak(clockPhrase(current()), "clock", chime); }
+function startRing() {
+  S.ringing = true; S.ringLastTune = 0; S.ringLastSaid = 0;
+  const a = S.alarms[S.ringAlarm]; speak(alarmPhrase(a), "alarm", tune); S.ringLastSaid = Date.now();
+}
+function stopRing() { S.ringing = false; if (S.speaking === "alarm") endSpeech(); paint(); }
+function timerToggle() {
+  const t = S.timer;
+  if (t.done) { t.left = t.total; t.done = false; t.lastSaid = t.total; }
+  if (t.running) { t.left = Math.max(0, Math.ceil((t.end - Date.now()) / 1000)); t.running = false; }
+  else { ac(); t.end = Date.now() + t.left * 1000; t.running = true; }
+  paint();
+}
+function timerCancel() { const t = S.timer; t.running = false; t.done = false; t.left = t.total; t.lastSaid = t.total; if (S.speaking === "timer") endSpeech(); paint(); }
+function timerSet(sec) { const t = S.timer; if (t.running) return; t.total = sec; t.left = sec; t.lastSaid = sec; t.done = false; paint(); }
+
+/* Runs 4x a second: interval speech for clock, ringing loop, timer countdown. */
+function tick() {
+  const d = current(), now = Date.now(), t = S.timer;
+  // Clock: speak on each interval boundary while the page is live.
+  if (S.live && S.clock.every && d.getSeconds() < 2) {
+    const mm = d.getHours() * 60 + d.getMinutes(), key = d.toDateString() + mm;
+    if (mm % S.clock.every === 0 && S.clock.said !== key && !S.speaking) { S.clock.said = key; speak(clockPhrase(d), "clock", chime); }
+  }
+  // Ringing: tune keeps playing; the time is spoken every ringEvery seconds.
+  if (S.ringing && !S.speaking) {
+    if (now - S.ringLastSaid >= S.ringEvery * 1000) { S.ringLastSaid = now; speak(alarmPhrase(S.alarms[S.ringAlarm]), "alarm", tune); }
+    else if (now - S.ringLastTune > 2600) { S.ringLastTune = now; tune(); }
+  }
+  // Timer: speak remaining time on each interval boundary; ring at zero.
+  if (t.running) {
+    t.left = Math.max(0, Math.ceil((t.end - now) / 1000));
+    if (t.left === 0) { t.running = false; t.done = true; speak(timerPhrase(0), "timer", tune); }
+    else if (t.left % t.every === 0 && t.left < t.lastSaid && t.left !== t.total) { t.lastSaid = t.left; speak(timerPhrase(t.left), "timer", chime); }
+  }
+  paint();
+}
+function timerProgress() { const t = S.timer; const left = t.running ? Math.max(0, (t.end - Date.now()) / 1000) : t.left; return 1 - left / t.total; }
+
+/* ---- Wiring ---- */
+const on = (sel, fn) => $$(sel).forEach(b => b.addEventListener("click", e => fn(b, e)));
+on("[data-say-clock]", sayClock);
+on("[data-clock-every]", b => { S.clock.every = +b.dataset.clockEvery; paint(); });
+on("[data-alarm]", b => { const a = S.alarms[+b.dataset.alarm]; a.on = !a.on; paint(); });
+on("[data-ring-every]", b => { S.ringEvery = +b.dataset.ringEvery; paint(); });
+on("[data-ring-start]", () => S.ringing ? stopRing() : startRing());
+on("[data-ring-stop]", stopRing);
+on("[data-ring-snooze]", stopRing);
+on("[data-timer-toggle]", timerToggle);
+on("[data-timer-cancel]", timerCancel);
+on("[data-timer-set]", b => timerSet(+b.dataset.timerSet));
+on("[data-timer-every]", b => { S.timer.every = +b.dataset.timerEvery; paint(); });
+on("[data-theme-set]", b => { S.theme = b.dataset.themeSet; paint(); });
+const sc = $("#scrub");
+sc.addEventListener("input", () => { S.live = false; S.mins = +sc.value; paint(); });
+on("#live", () => { S.live = true; paint(); });
+try { if (matchMedia("(prefers-color-scheme: dark)").matches) S.theme = "dark"; } catch (e) {}
+
+function syncCommon(d) {
+  document.documentElement.dataset.theme = S.theme;
+  $$("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeSet === S.theme));
+  $$("[data-clock-every]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.clockEvery === S.clock.every));
+  $$("[data-ring-every]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.ringEvery === S.ringEvery));
+  $$("[data-timer-every]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.timerEvery === S.timer.every));
+  $$("[data-timer-set]").forEach(b => { b.setAttribute("aria-pressed", +b.dataset.timerSet === S.timer.total); b.disabled = S.timer.running; });
+  $$("[data-alarm]").forEach(b => b.setAttribute("aria-checked", S.alarms[+b.dataset.alarm].on));
+  $$("[data-src]").forEach(e => e.classList.toggle("speaking", S.speaking === e.dataset.src));
+  $$("[data-ringing]").forEach(e => e.classList.toggle("ringing", S.ringing));
+  $$("[data-ring-start]").forEach(b => b.textContent = S.ringing ? "Stop ringing" : "Ring the alarm");
+  if (S.live) sc.value = d.getHours() * 60 + d.getMinutes();
+  const v = +sc.value; $("#scrubOut").textContent = h12(Math.floor(v / 60)) + ":" + pad(v % 60) + " " + ampm(Math.floor(v / 60));
+  $("#live").setAttribute("aria-pressed", S.live);
+  $$(".sbt").forEach(e => e.textContent = h12(d.getHours()) + ":" + pad(d.getMinutes()));
+}
+function paint() { const d = current(); syncCommon(d); draw(d); }
+
+/* ---- Screens ---- */
+/* ---- Continuous sky ----
+   Colour stops through the day (minutes from midnight). The sky is blended linearly between
+   neighbouring stops every frame, and the displayed values ease toward the target (~0.5 s),
+   so time passing, scrubbing and switching appearance all ramp smoothly. */
+const X=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const L=(min,top,bot,l1,l2,l3,ink)=>({min,top:X(top),bot:X(bot),l1,l2,l3,ink:X(ink)});
+/* Light stops: pale by day, deep navy by night, and vivid twilight in between. Each transition from dark
+   to pale crosses through saturated colour (plum -> coral at sunrise, coral -> plum at sunset) over 20 min,
+   so the sky is never a mid-tone grey. Dark-side stops stay below luminance 0.12; pale-side stops above 0.30. */
+const AUR=["#0E1730","#0B1226",[31,74,94,.62],[59,53,112,.50],[26,62,86,.48],"#10233A"];
+const DAY=["#EEF5FB","#E8F1F8",[207,230,250,1],[227,244,236,1],[217,236,247,.8],"#10233A"];
+const LIGHT=[
+  L(0,   ...AUR),
+  L(280, ...AUR),
+  L(310, "#1E1B4B","#2A1F55",[98,70,170,.55],[150,70,140,.40],[190,90,110,.40],"#10233A"),   // 05:10 indigo
+  L(340, "#3E2A6E","#7A3D73",[200,100,130,.50],[120,90,200,.45],[240,140,110,.60],"#2A1F2E"), // 05:40 plum, coral horizon
+  L(360, "#F6B79E","#F59A86",[255,200,140,.80],[245,160,170,.70],[200,180,240,.60],"#2A1F2E"),// 06:00 sunrise coral
+  L(420, "#FBEFEA","#F4E4E6",[249,217,207,1],[228,221,247,1],[246,214,208,.8],"#2A1F2E"),     // 07:00 dawn
+  L(510, ...DAY),
+  L(960, ...DAY),
+  L(1020,"#F7ECF1","#F1E2EA",[246,210,221,1],[220,214,242,1],[243,213,208,.8],"#2A1830"),     // 17:00 dusk
+  L(1080,"#F3C1B0","#F29E8E",[255,190,120,.80],[240,130,150,.60],[190,160,230,.60],"#2A1830"),// 18:00 golden hour
+  L(1120,"#E48A84","#D96A78",[255,170,110,.60],[230,110,140,.55],[170,120,210,.50],"#2A1124"),// 18:40 sunset
+  L(1140,"#4A2C70","#6B3366",[210,100,130,.45],[110,80,190,.50],[230,120,90,.35],"#2A1124"),  // 19:00 plum dusk
+  L(1185,"#241C50","#1C1A45",[80,64,160,.50],[31,74,94,.50],[140,70,120,.30],"#10233A"),      // 19:45 indigo
+  L(1260,...AUR),
+  L(1440,...AUR)];
+const NIGHTD=["#05070D","#030409",[31,74,94,.20],[59,53,112,.16],[26,62,86,.14],"#EEF0F6"];
+const DAYD=["#070B11","#05070B",[46,92,128,.20],[44,96,84,.12],[40,74,104,.14],"#EEF0F6"];
+const DARKK=[
+  L(0,   ...NIGHTD),
+  L(280, ...NIGHTD),
+  L(310, "#08071A","#0A0718",[98,70,170,.20],[150,70,140,.14],[190,90,110,.12],"#EEF0F6"),
+  L(340, "#0E0A1C","#16091A",[200,100,130,.20],[120,90,200,.16],[240,140,110,.16],"#EEF0F6"),
+  L(360, "#160C12","#140A0E",[255,170,120,.18],[245,140,160,.14],[180,150,230,.12],"#EEF0F6"),
+  L(420, "#100B0F","#09070B",[122,74,70,.20],[84,66,124,.16],[96,60,70,.14],"#EEF0F6"),
+  L(510, ...DAYD),
+  L(960, ...DAYD),
+  L(1020,"#0F090E","#08060A",[128,62,80,.20],[72,60,124,.16],[110,56,48,.12],"#EEF0F6"),
+  L(1080,"#140B0C","#10080A",[255,170,110,.18],[240,120,140,.14],[170,130,220,.12],"#EEF0F6"),
+  L(1120,"#150A10","#10070D",[240,130,110,.20],[220,100,140,.16],[150,100,200,.12],"#EEF0F6"),
+  L(1140,"#0D0818","#0A0614",[180,90,130,.18],[100,70,180,.18],[200,100,80,.12],"#EEF0F6"),
+  L(1185,"#070616","#050511",[80,64,160,.18],[31,74,94,.16],[140,70,120,.12],"#EEF0F6"),
+  L(1260,...NIGHTD),
+  L(1440,...NIGHTD)];
+const FIELDS=["top","bot","l1","l2","l3","ink"];
+const mix=(a,b,f)=>a.map((v,i)=>v+(b[i]-v)*f);
+/* OKLCH blending keeps colour saturated between stops instead of greying out. */
+const toLin=c=>{c/=255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);};
+const toS=c=>255*(c<=.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-.055);
+function oklch(rgb){const [r,g,b]=rgb.slice(0,3).map(toLin);
+  const l=Math.cbrt(.4122214708*r+.5363325363*g+.0514459929*b),m=Math.cbrt(.2119034982*r+.6806995451*g+.1073969566*b),s=Math.cbrt(.0883024619*r+.2817188376*g+.6299787005*b);
+  const L=.2104542553*l+.7936177850*m-.0040720468*s,A=1.9779984951*l-2.4285922050*m+.4505937099*s,B=.0259040371*l+.7827717662*m-.8086757660*s;
+  return [L,Math.hypot(A,B),Math.atan2(B,A)];}
+function fromOklch([L,C,H]){const A=C*Math.cos(H),B=C*Math.sin(H);
+  const l=(L+.3963377774*A+.2158037573*B)**3,m=(L-.1055613458*A-.0638541728*B)**3,s=(L-.0894841775*A-1.2914855480*B)**3;
+  return [4.0767416621*l-3.3077115913*m+.2309699292*s,-1.2684380046*l+2.6097574011*m-.3413193965*s,-.0041960863*l-.7034186147*m+1.7076147010*s].map(c=>Math.min(255,Math.max(0,toS(Math.max(0,c)))));}
+function mixOk(a,b,f){
+  const A=oklch(a),B=oklch(b); let dh=B[2]-A[2]; if(dh>Math.PI) dh-=2*Math.PI; if(dh<-Math.PI) dh+=2*Math.PI;
+  // carry hue from the more colourful end when the other is nearly neutral
+  const hA=A[1]<.02?B[2]:A[2], hB=B[1]<.02?A[2]:A[2]+dh;
+  const out=fromOklch([A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f,hA+(hB-hA)*f]);
+  return a.length>3?[...out,a[3]+(b[3]-a[3])*f]:out;
+}
+function skyAt(keys,min){
+  min=((min%1440)+1440)%1440; let i=0; while(keys[i+1].min<=min&&i<keys.length-2) i++;
+  const A=keys[i],B=keys[i+1],f=(min-A.min)/(B.min-A.min), s=f*f*(3-2*f);
+  return FIELDS.flatMap(k=>k==="ink"?mix(A[k],B[k],s):mixOk(A[k],B[k],s));
+}
+/* Soften the twilight stops: OKLCH chroma x0.50 (lightness and hue unchanged). Scrubbed 0.20-1.00: text contrast is
+   unaffected; below 0.45 some mid-tone minutes fall under chroma 0.04 and read as grey, so 0.50 is the least
+   saturated value with a margin. */
+const TWILIGHT=[310,340,360,1080,1120,1140,1185], TW_CHROMA=.50;
+const soften=c=>{const o=oklch(c);const out=fromOklch([o[0],o[1]*TW_CHROMA,o[2]]);return c.length>3?[...out,c[3]]:out;};
+[LIGHT,DARKK].forEach(keys=>keys.forEach(k=>{if(TWILIGHT.includes(k.min)) ["top","bot","l1","l2","l3"].forEach(f=>k[f]=soften(k[f]));}));
+const lin=c=>{c/=255;return c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);};
+const lum=c=>.2126*lin(c[0])+.7152*lin(c[1])+.0722*lin(c[2]);
+const smooth=(e0,e1,x)=>{const u=Math.min(1,Math.max(0,(x-e0)/(e1-e0)));return u*u*(3-2*u);};
+const rgb=c=>"rgb("+c.slice(0,3).map(Math.round)+")", rgba=c=>"rgba("+c.slice(0,3).map(Math.round)+","+c[3].toFixed(3)+")";
+const hex=c=>"#"+c.slice(0,3).map(v=>Math.round(v).toString(16).padStart(2,"0")).join("");
+/* Legibility: text is always either dark ink or light, never an in-between grey. The choice follows
+   the sky's luminance with hysteresis (light text below 0.185, dark text above 0.215) and crossfades in
+   ~0.3 s. Behind light text, glass panels gain a navy scrim so the panel stays below luminance 0.06
+   (small text there keeps >= 7:1). Secondary text rises to full opacity while the sky is mid-tone. */
+const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+const NAVY=[12,16,34], LIGHT_TEXT=[238,240,246];
+function tokens(v,m,Ls,sky){
+  const ink=v.slice(18,21), fg=mix(ink,LIGHT_TEXT,m);
+  const a=Ls>.06?(Ls-.06)/(Ls-.006):0, s=smooth(0,.15,a);
+  const darkGlass=[...mix([255,255,255],NAVY,s), .075*(1-s)+a*s], lightGlass=[255,255,255,.55];
+  const glass=mix(lightGlass,darkGlass,m), card=sky?mix(sky,glass.slice(0,3),glass[3]):null;
+  let f2=.58; if(sky) while(f2<1&&Math.min(contrast(mix(sky,fg,f2),sky),contrast(mix(card,fg,f2),card))<4.5) f2+=.02;
+  return {fg, glass, edge:.85+(.13-.85)*m, fg2:Math.min(1,f2),
+    acc:mix([217,102,26],[255,179,107],m), acc2:mix([194,88,15],[255,179,107],m), on:m>.5?"#1A1208":"#FFFFFF",
+    sel:mix([255,255,255],[12,20,40],m), shadow:mix([30,45,70,.14],[0,0,0,.5],m)};
+}
+const skyBehind=v=>{const base=mix(v.slice(0,3),v.slice(3,6),.5);return mix(mix(base,v.slice(6,9),v[9]*.35),v.slice(10,13),v[13]*.2);};
+function render(el,v,dt){
+  const Ls=lum(skyBehind(v));
+  if(el._lt==null) el._lt=Ls<.213;
+  if(el._lt&&Ls>.222) el._lt=false; else if(!el._lt&&Ls<.204) el._lt=true;
+  el._m=+el._lt;   // text and glass switch in one step, never through grey; the sky itself ramps
+  const T=tokens(v,el._m,Ls,skyBehind(v)), set=(k,x)=>el.style.setProperty("--"+k,x);
+  const top=v.slice(0,3),bot=v.slice(3,6),l1=v.slice(6,10),l2=v.slice(10,14),l3=v.slice(14,18);
+  set("a",rgb(T.sel)); set("fg",rgb(T.fg)); set("fg2","rgba("+T.fg.map(Math.round)+","+T.fg2.toFixed(3)+")");
+  set("acc",rgb(T.acc)); set("acc2",rgb(T.acc2)); set("onacc",T.on);
+  set("glass",rgba(T.glass)); set("edge","rgba(255,255,255,"+T.edge.toFixed(3)+")"); set("shadow","0 12px 32px -13px "+rgba(T.shadow));
+  el.querySelector(".sky").style.background="radial-gradient(62% 40% at 14% 12%,"+rgba(l1)+",transparent 72%),"+
+    "radial-gradient(58% 44% at 92% 62%,"+rgba(l2)+",transparent 74%),"+
+    "radial-gradient(70% 38% at 38% 104%,"+rgba(l3)+",transparent 72%),"+
+    "linear-gradient(180deg,"+rgb(top)+" 0%,"+rgb(bot)+" 100%)";
+}
+let lastF=performance.now();
+function frame(now){
+  const dt=Math.min(100,now-lastF), k=1-Math.exp(-dt/500); lastF=now;
+  $$(".sky-host").forEach(el=>{
+    if(el._min==null) return;
+    const tgt=skyAt(S.theme==="dark"?DARKK:LIGHT,el._min);
+    el._cur=el._cur?el._cur.map((x,i)=>x+(tgt[i]-x)*k):tgt;
+    render(el,el._cur,dt);
+  });
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+/* Contrast audit across the day (run audit() in the console). */
+const over=(top,bg)=>mix(bg,top.slice(0,3),top[3]);
+function audit(keys){
+  let lt=null,worst={sky:99,card:99,card2:99,sky2:99,midChroma:99,midMinutes:0,under45:0};
+  for(let min=0;min<1440;min+=.1){
+    const v=skyAt(keys,min),sky=skyBehind(v),Ls=lum(sky);
+    if(lt==null) lt=Ls<.213; if(lt&&Ls>.222) lt=false; else if(!lt&&Ls<.204) lt=true;
+    const T=tokens(v,+lt,Ls,sky),card=over(T.glass,sky);
+    const f2=c=>mix(c,T.fg,T.fg2);
+    const r={sky:contrast(T.fg,sky),card:contrast(T.fg,card),card2:contrast(f2(card),card),sky2:contrast(f2(sky),sky)};
+    for(const k in r) if(r[k]<worst[k]) worst[k]=+r[k].toFixed(2);
+    if(r.sky<4.5) worst.under45+=.1;
+    const ok=oklch(sky); if(ok[0]>.35&&ok[0]<.75){worst.midMinutes+=.1; if(ok[1]<worst.midChroma) worst.midChroma=+ok[1].toFixed(3);}
+  }
+  worst.under45=+worst.under45.toFixed(1); worst.midMinutes=Math.round(worst.midMinutes);
+  return worst;
+}
+/* 24-hour strips for the spec section */
+function strip(keys){return "linear-gradient(90deg,"+Array.from({length:145},(_,i)=>{const v=skyAt(keys,i*10);return rgb(mix(mix(v.slice(0,3),v.slice(3,6),.5),v.slice(6,9),v[9]*.5))+" "+(i/144*100).toFixed(2)+"%";}).join(",")+")";}
+const ICON={
+  clock:'<svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8.5"/><path d="M11 6.5V11l3 2"/></svg>',
+  alarm:'<svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12" r="7.5"/><path d="M11 8.5V12l2.5 1.5M3.5 4.5l3-2.5M18.5 4.5l-3-2.5"/></svg>',
+  timer:'<svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12.5" r="7.5"/><path d="M9 2h4M11 12.5l3-3"/></svg>'};
+const SPEAK='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>';
+const STOP='<svg width="20" height="20" viewBox="0 0 20 20"><rect x="5" y="5" width="10" height="10" rx="2" fill="currentColor"/></svg>';
+$$("[class~=scr]").forEach(s=>{const m=s.innerHTML.match(/<!--TABS:(\w+)-->/);if(!m)return;
+  const nav=document.createElement("nav");nav.className="tabs glass";
+  nav.innerHTML=["clock","alarm","timer"].map(k=>'<a'+(k===m[1]?' aria-current="page"':'')+'>'+ICON[k]+(k[0].toUpperCase()+k.slice(1))+'</a>').join("");
+  s.querySelector(".home").before(nav);});
+const sub=s=>s.replace(/^It's /,"").replace(/^./,c=>c.toUpperCase());
+const fmtT=mm=>h12(Math.floor(mm/60)%24)+":"+pad(mm%60), apT=mm=>ampm(Math.floor(mm/60)%24);
+const ZZ='<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v6.5a3 3 0 0 0 3 3h8"/><path d="M11.5 8.5l3 3-3 3"/></svg>';
+function draw(d){
+  const h=d.getHours(),m=d.getMinutes(),t=S.timer,a=S.alarms[S.ringAlarm];
+  a.h=h; a.m=m;   // the ringing alarm follows the visualised time
+  $$(".sky-host").forEach(s=>s._min=s.classList.contains("ring")?a.h*60+a.m:h*60+m+d.getSeconds()/60);
+  // clock
+  $("#c-date").textContent=d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+  $("#c-time").textContent=h12(h)+":"+pad(m); $("#c-ap").textContent=ampm(h);
+  $("#c-sent").textContent=sub(clockPhrase(d));
+  $("#c-ring").style.strokeDashoffset=942.48*(1-clockProgress(d));
+  const cs=clockStatus(d); $("#c-status").innerHTML=cs.a+"<small>"+cs.b+"</small>";
+  const cb=$("#c-say"), sp=S.speaking==="clock"; if(cb.dataset.s!==String(sp)){cb.dataset.s=sp;cb.innerHTML=sp?STOP:SPEAK;cb.setAttribute("aria-label",sp?"Stop":"Say the time");}
+  // alarms
+  const now=h*60+m;
+  if(S.snooze){const inn=(S.snooze.at-now+1440)%1440; if(inn===0||inn>720) S.snooze=null;}   // fired (or far in the past)
+  let nx=null;
+  S.alarms.forEach(al=>{if(!al.on)return;const t0=al.h*60+al.m,df=(t0-now+1440)%1440;if(df&&(!nx||df<nx.df))nx={t:t0,df,label:al.label,snz:false};});
+  if(S.snooze){const df=(S.snooze.at-now+1440)%1440;if(!nx||df<nx.df)nx={t:S.snooze.at,df,label:S.alarms[S.snooze.parent].label,snz:true};}
+  $("#a-time").innerHTML=nx?fmtT(nx.t)+"<small class='ital'>"+apT(nx.t)+"</small>":"None";
+  $("#a-sub").textContent=nx?nx.label+(nx.snz?", snoozed, ":", ")+inText(nx.df):"Turn on an alarm below";
+  const order=S.alarms.map((_,i)=>i).sort((x,y)=>(S.alarms[x].h*60+S.alarms[x].m)-(S.alarms[y].h*60+S.alarms[y].m));
+  let html="";
+  order.forEach(i=>{const al=S.alarms[i],t0=al.h*60+al.m,ringing=i===S.ringAlarm&&!S.snooze;
+    html+='<li class="'+(al.on?"":"off")+'"><div><span class="t">'+fmtT(t0)+'<small class="ital">'+apT(t0)+'</small></span><span class="d">'+al.label+', '+al.days.toLowerCase()+(ringing?', <span class="now">ringing now</span>':'')+'</span></div><button role="switch" data-toggle="'+i+'" aria-checked="'+al.on+'" aria-label="'+al.label+' alarm"></button></li>';
+    if(S.snooze&&S.snooze.parent===i){const df=(S.snooze.at-now+1440)%1440;
+      html+='<li class="snz">'+ZZ+'<div><span class="st2">Snoozed until '+fmtT(S.snooze.at)+' '+apT(S.snooze.at)+'</span><span class="d">'+inText(df)+'</span></div><button class="mini" data-cancel-snooze aria-label="Cancel snooze">Cancel</button></li>';}
+  });
+  const ul=$("#a-list"); if(ul._html!==html){ul._html=html;ul.innerHTML=html;}
+  $("#snz-val").textContent=S.snoozeLen+" min";
+  $$("[data-snooze-step]").forEach(b=>b.disabled=+b.dataset.snoozeStep<0?S.snoozeLen<=SNOOZE_MIN:S.snoozeLen>=SNOOZE_MAX);
+  $("#r-snooze").textContent="Snooze "+S.snoozeLen+" min";
+  drawStrips(d);
+  const ex=$("#exact"); if(document.activeElement!==ex) ex.value=pad(h)+":"+pad(m);
+  const sc2=$("#scrub"); if(document.activeElement!==sc2){sc2.value=h*60+m;} $("#scrubOut").textContent=h12(h)+":"+pad(m)+" "+ampm(h);
+  // ringing
+  $("#r-label").textContent=a.label; $("#r-time").textContent=h12(a.h)+":"+pad(a.m); $("#r-ap").textContent=ampm(a.h);
+  $("#r-sent").textContent=timePhrase(a.h,a.m);
+  $("#r-note").textContent="Saying the time every "+everyLabel(S.ringEvery);
+  // timer
+  const f=fmtTimer(t.left); $("#t-time").textContent=f.text;
+  $("#t-of").textContent="of "+durLabel(t.total);
+  fitTimer();
+  const isPreset=[60,300,600,1500].includes(t.total), tcb=$("#t-custom");
+  tcb.setAttribute("aria-pressed",!isPreset); tcb.disabled=t.running; tcb.textContent=isPreset?"Custom":fmtTimer(t.total).text;
+  $("#t-ring").style.strokeDashoffset=841.95*timerProgress();
+  $("#t-go").textContent=t.done?"Restart":t.running?"Pause":t.left<t.total?"Resume":"Start";
+  $("#t-state").textContent=t.done?"Done":t.running?"Running":t.left<t.total?"Paused":"Ready";
+}
+/* ---- Controls added for review ---- */
+S.snoozeLen=9; S.snooze=null;
+$("#exact").addEventListener("input",e=>{const v=e.target.value;if(!/^\d\d:\d\d/.test(v))return;S.live=false;S.mins=+v.slice(0,2)*60+ +v.slice(3,5);paint();});
+const SNOOZE_MIN=2, SNOOZE_MAX=15;   // default 9
+$$("[data-snooze-step]").forEach(b=>b.addEventListener("click",()=>{S.snoozeLen=Math.min(SNOOZE_MAX,Math.max(SNOOZE_MIN,S.snoozeLen+ +b.dataset.snoozeStep));paint();}));
+$$("[data-ring-snooze]").forEach(b=>b.addEventListener("click",()=>{const d=current();S.snooze={at:(d.getHours()*60+d.getMinutes()+S.snoozeLen)%1440,parent:S.ringAlarm};paint();}));
+$("#a-list").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.toggle!=null){const al=S.alarms[+b.dataset.toggle];al.on=!al.on;paint();}
+  else if(b.hasAttribute("data-cancel-snooze")) openSheet(b);});
+/* Exact-time stepper: one minute per press; hold to repeat, speeding up. Wraps past midnight. */
+function stepTime(d){const c=current();S.mins=((c.getHours()*60+c.getMinutes()+d)%1440+1440)%1440;S.live=false;paint();}
+$$("[data-tstep]").forEach(b=>{
+  const d=+b.dataset.tstep; let timer=null, start=0;
+  const stop=()=>{clearTimeout(timer);timer=null;};
+  const rep=()=>{stepTime(d);const held=performance.now()-start;timer=setTimeout(rep,held>2500?30:held>1000?70:140);};
+  b.addEventListener("pointerdown",e=>{if(e.button!==0)return;b.setPointerCapture(e.pointerId);start=performance.now();stepTime(d);timer=setTimeout(rep,420);});
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>b.addEventListener(ev,stop));
+  b.addEventListener("click",e=>{if(e.detail===0)stepTime(d);});   // keyboard (Enter / Space)
+});
+/* ---- Custom timer length ---- */
+const durLabel=sec=>{const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60,p=[];
+  if(h)p.push(h+(h===1?" hour":" hours")); if(m)p.push(m+(m===1?" minute":" minutes")); if(s)p.push(s+(s===1?" second":" seconds"));
+  return p.join(" ")||"0 seconds";};
+/* Long durations (1:30:00) shrink to stay inside the ring; short ones keep the 92 pt design size. */
+const durShort=sec=>{const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60,p=[];if(h)p.push(h+" h");if(m)p.push(m+" min");if(s)p.push(s+" s");return p.join(" ");};
+function fitTimer(){const max=$(".timer .halo").clientWidth*.78, b=$("#t-time"), of=$("#t-of");
+  b.style.fontSize="92px"; if(b.scrollWidth>max) b.style.fontSize=Math.floor(92*max/b.scrollWidth)+"px";
+  if(of.scrollWidth>max) of.textContent="of "+durShort(S.timer.total);    // "of 1 h 30 min 5 s" when the long form won't fit
+}
+const ITEM=34, tsheet=$("#tsheet"), cols=$$(".wcol");
+cols.forEach(c=>{for(let i=0;i<=+c.dataset.max;i++){const d=document.createElement("div");d.textContent=i;c.appendChild(d);}
+  c.addEventListener("scroll",()=>updatePicker(),{passive:true});
+  c.addEventListener("keydown",e=>{const k={ArrowUp:-1,ArrowDown:1,PageUp:-10,PageDown:10}[e.key];if(k==null)return;e.preventDefault();
+    const v=Math.min(+c.dataset.max,Math.max(0,wheelVal(c)+k));c.scrollTop=v*ITEM;updatePicker();});
+  c.addEventListener("click",e=>{const d=e.target.closest(".wcol div");if(d)c.scrollTo({top:(+d.textContent)*ITEM,behavior:"smooth"});});});
+const wheelVal=c=>Math.min(+c.dataset.max,Math.max(0,Math.round(c.scrollTop/ITEM)));
+const pickerTotal=()=>wheelVal(cols[0])*3600+wheelVal(cols[1])*60+wheelVal(cols[2]);
+function updatePicker(){cols.forEach(c=>c.setAttribute("aria-valuenow",wheelVal(c)));const s=pickerTotal();
+  $("#tw-sum").textContent=s?durLabel(s):"Choose a length";$("#tw-set").disabled=!s;}
+function openTimerSheet(){if(S.timer.running)return;const s=S.timer.total;
+  tsheet.classList.add("open");tsheet.setAttribute("aria-hidden","false");
+  [Math.floor(s/3600),Math.floor(s%3600/60),s%60].forEach((v,i)=>cols[i].scrollTop=v*ITEM);
+  updatePicker();cols[1].focus({preventScroll:true});}
+function closeTimerSheet(){tsheet.classList.remove("open");tsheet.setAttribute("aria-hidden","true");$("#t-custom").focus({preventScroll:true});}
+$("#t-custom").addEventListener("click",openTimerSheet);
+$("#tw-cancel").addEventListener("click",closeTimerSheet);
+$("#tw-set").addEventListener("click",()=>{const s=pickerTotal();if(!s)return;timerSet(s);closeTimerSheet();});
+tsheet.addEventListener("click",e=>{if(e.target===tsheet)closeTimerSheet();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&tsheet.classList.contains("open"))closeTimerSheet();});
+/* ---- About sheet (opened from the i button on the Clock screen) ---- */
+const about=$("#about");
+function openAbout(){about.classList.add("open");about.setAttribute("aria-hidden","false");$("#ab-done").focus({preventScroll:true});}
+function closeAbout(){about.classList.remove("open");about.setAttribute("aria-hidden","true");$("#c-info").focus({preventScroll:true});}
+$("#c-info").addEventListener("click",openAbout);
+$("#ab-done").addEventListener("click",closeAbout);
+about.addEventListener("click",e=>{if(e.target===about)closeAbout();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&about.classList.contains("open"))closeAbout();});
+$$("[data-placeholder]").forEach(a=>a.addEventListener("click",e=>e.preventDefault()));   // policy URL not decided yet
+const sheet=$("#sheet");
+function openSheet(from){const sn=S.snooze;if(!sn)return;const al=S.alarms[sn.parent];
+  $("#sh-t").textContent="Cancel the "+fmtT(sn.at)+" "+apT(sn.at)+" snooze?";
+  $("#sh-m").textContent=al.days==="Once"?"This alarm won't ring again.":al.label+" will still ring at its next scheduled time.";
+  sheet._from=from;sheet.classList.add("open");sheet.setAttribute("aria-hidden","false");$("#sh-no").focus({preventScroll:true});}
+function closeSheet(){sheet.classList.remove("open");sheet.setAttribute("aria-hidden","true");const f=$("[data-cancel-snooze]");if(f)f.focus({preventScroll:true});}
+$("#sh-yes").addEventListener("click",()=>{S.snooze=null;closeSheet();paint();});
+$("#sh-no").addEventListener("click",closeSheet);
+sheet.addEventListener("click",e=>{if(e.target===sheet)closeSheet();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheet.classList.contains("open"))closeSheet();});
+/* Scale the phones so all four and the controls fit in the window */
+function fitPhones(){
+  const st=$(".stage"), top=st.getBoundingClientRect().top+scrollY;
+  const w=Math.min(innerWidth,1560)-48, h=innerHeight-top-48;          // 48: caption and breathing room
+  let s=Math.min(.72,h/844,(w-3*24)/(4*390));
+  if((w-3*24)/(4*390)<.42) s=Math.min(.8,(w-24)/(2*390));             // narrow windows: two per row
+  document.documentElement.style.setProperty("--fit",Math.max(.38,s).toFixed(3));
+}
+addEventListener("resize",fitPhones); fitPhones(); requestAnimationFrame(fitPhones); document.fonts&&document.fonts.ready.then(fitPhones);
+/* 24-hour strips of the sky, with a marker at the viewed time. */
+let stripsDrawn=false;
+function drawStrips(d){
+  if(!stripsDrawn){
+    stripsDrawn=true;
+    $("#stripL").style.background=strip(LIGHT);
+    $("#stripD").style.background=strip(DARKK);
+  }
+  const pct=((d.getHours()*60+d.getMinutes()+d.getSeconds()/60)/1440*100).toFixed(2)+"%";
+  $$(".strip .mark").forEach(m=>m.style.left=pct);
+}
+setInterval(tick,250);paint();
+</script>
+</body>
+</html>

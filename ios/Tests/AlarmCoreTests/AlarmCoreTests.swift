@@ -71,7 +71,7 @@ final class AlarmCalendarTests: XCTestCase {
         ] {
             XCTAssertThrowsError(try alarm.validate())
         }
-        XCTAssertNoThrow(try AlarmRecord(hour: 23, minute: 59, weekdays: Set(1...7), snoozeMinutes: 30).validate())
+        XCTAssertNoThrow(try AlarmRecord(hour: 23, minute: 59, weekdays: Set(1...7), snoozeMinutes: 15).validate())
     }
 }
 
@@ -252,6 +252,39 @@ private enum TestFailure: Error { case expected }
         XCTAssertTrue(scheduler.registered.isEmpty)
     }
 
+    /// Ensures cancelling a snooze leaves the repeating parent and its system registration intact.
+    func testCancelSnoozePreservesParent() async {
+        let parent = await savedRepeating()
+        scheduler.alerting.insert(parent.systemID)
+        store.refresh()
+        _ = await store.snooze(parent)
+        let child = store.records.first { $0.parentID == parent.id }!
+        let result = await store.delete(child)
+        XCTAssertTrue(result)
+        XCTAssertEqual(store.records, [parent])
+        XCTAssertNotNil(scheduler.registered[parent.systemID])
+        XCTAssertNil(scheduler.registered[child.systemID])
+    }
+
+    /// Ensures changing the snooze length cannot cancel or move an already scheduled snooze.
+    func testEditPreservesPendingSnooze() async {
+        var parent = await savedRepeating()
+        scheduler.alerting.insert(parent.systemID)
+        store.refresh()
+        _ = await store.snooze(parent)
+        let child = store.records.first { $0.parentID == parent.id }!
+        parent.snoozeMinutes = 2
+        let result = await store.save(parent)
+        XCTAssertTrue(result)
+        XCTAssertEqual(store.records.first { $0.id == child.id }, child)
+        XCTAssertEqual(scheduler.registered[child.systemID], child)
+        parent = store.records.first { $0.id == parent.id }!
+        parent.isEnabled = false
+        _ = await store.save(parent)
+        XCTAssertNil(scheduler.registered[child.systemID])
+        XCTAssertFalse(store.records.contains { $0.id == child.id })
+    }
+
     /// Ensures a completed snooze is removed and never re-arms itself.
     func testStopSnoozeRemovesChild() async {
         let parent = await savedRepeating()
@@ -395,7 +428,7 @@ private enum TestFailure: Error { case expected }
         let alarm = AlarmRecord()
         XCTAssertThrowsError(try AlarmDocument(records: [alarm, alarm]).validate())
         var future = AlarmDocument()
-        future.version = 2
+        future.version = 3
         XCTAssertThrowsError(try future.validate())
     }
 }

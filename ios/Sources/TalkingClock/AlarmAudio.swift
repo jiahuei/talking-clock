@@ -2,6 +2,7 @@ import AVFoundation
 import AlarmCore
 import CryptoKit
 import Foundation
+import Observation
 
 private enum AudioFailure: LocalizedError {
     case unavailable, tooLong, timedOut, busy
@@ -90,7 +91,7 @@ private final class SpeechFileWriter: @unchecked Sendable {
             let t = Double(frame) / format.sampleRate
             let local = t.truncatingRemainder(dividingBy: 0.4)
             let envelope = local < 0.24 && t < 0.8 ? sin(.pi * local / 0.24) : 0
-            let value = Float(0.24 * envelope * sin(2 * .pi * 880 * t))
+            let value = Float(0.24 * envelope * sin(2 * .pi * (t < 0.4 ? 880 : 660) * t))
             for channel in 0..<Int(format.channelCount) { channels[channel][frame] = value }
         }
         try file?.write(from: buffer)
@@ -98,20 +99,19 @@ private final class SpeechFileWriter: @unchecked Sendable {
     }
 }
 
-@MainActor final class AlarmAudio: NSObject, AVAudioPlayerDelegate, AVSpeechSynthesizerDelegate {
+@MainActor @Observable final class AlarmAudio: NSObject, AVAudioPlayerDelegate {
     private var renderer: AVSpeechSynthesizer?
-    private let speaker = AVSpeechSynthesizer()
     private var player: AVAudioPlayer?
     private var rendering = false
-
-    override init() {
-        super.init()
-        speaker.delegate = self
-    }
+    private(set) var isSpeaking = false
+    private var playbackRequest = UUID()
 
     func sound(for alarm: AlarmRecord) async throws -> String {
-        let text = Self.phrase(hour: alarm.hour, minute: alarm.minute)
-        let digest = SHA256.hash(data: Data("v1-en-US-\(text)".utf8)).map { String(format: "%02x", $0) }.joined()
+        try await sound(text: SpokenTime.alarm(alarm))
+    }
+
+    func sound(text: String) async throws -> String {
+        let digest = SHA256.hash(data: Data("v2-en-US-\(text)".utf8)).map { String(format: "%02x", $0) }.joined()
         let name = "talking-clock-\(digest).caf"
         let directory = try FileManager.default.url(
             for: .libraryDirectory, in: .userDomainMask,
@@ -159,69 +159,58 @@ private final class SpeechFileWriter: @unchecked Sendable {
 
     func preview(_ alarm: AlarmRecord) async throws {
         guard alarm.announcesTime else { return }
-        let name = try await sound(for: alarm)
-        let library = try FileManager.default.url(
-            for: .libraryDirectory, in: .userDomainMask,
-            appropriateFor: nil, create: false)
+        try await speak(SpokenTime.alarm(alarm))
+    }
+
+    func speak(_ text: String) async throws {
         stop()
-        try activateSession()
-        player = try AVAudioPlayer(contentsOf: library.appendingPathComponent("Sounds").appendingPathComponent(name))
-        player?.delegate = self
-        guard player?.play() == true else {
-            stop()
-            throw AudioFailure.unavailable
+        let request = playbackRequest
+        isSpeaking = true
+        do {
+            let name = try await sound(text: text)
+            guard request == playbackRequest else { return }
+            let library = try FileManager.default.url(
+                for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+            try activateSession()
+            player = try AVAudioPlayer(
+                contentsOf: library.appendingPathComponent("Sounds").appendingPathComponent(name))
+            player?.delegate = self
+            guard player?.play() == true else { throw AudioFailure.unavailable }
+        } catch {
+            if request == playbackRequest { stop() }
+            throw error
         }
     }
 
-    func speakNow() throws {
-        stop()
-        try activateSession()
+    func speakNow() async throws {
         let now = Date()
-        let utterance = AVSpeechUtterance(
-            string: Self.phrase(
+        try await speak(
+            SpokenTime.clock(
                 hour: Calendar.current.component(.hour, from: now),
                 minute: Calendar.current.component(.minute, from: now)))
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        speaker.speak(utterance)
     }
 
     func stop() {
+        playbackRequest = UUID()
+        isSpeaking = false
         player?.stop()
         player = nil
-        speaker.stopSpeaking(at: .immediate)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func activateSession() throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try session.setCategory(
+            .playback, mode: .voicePrompt, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
         try session.setActive(true)
-    }
-
-    private static func phrase(hour: Int, minute: Int) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US")
-        formatter.dateFormat = "h:mm a"
-        let date = Calendar.current.date(
-            from: DateComponents(year: 2001, month: 1, day: 1, hour: hour, minute: minute))!
-        return "The time is \(formatter.string(from: date))."
     }
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
             guard self.player === player else { return }
             self.player = nil
-            if !self.speaker.isSpeaking {
-                try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            }
-        }
-    }
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in
-            // A delayed completion from old speech must not stop a newly started preview.
-            if self.player == nil, !self.speaker.isSpeaking {
-                try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-            }
+            self.isSpeaking = false
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         }
     }
 }

@@ -5,83 +5,55 @@ import SwiftUI
 struct MainView: View {
     @Bindable var store: AlarmStore
     let audio: AlarmAudio
+    @Bindable var session: AnnouncementSession
+    @Bindable var timer: TimerStore
     @State private var editing: AlarmRecord?
     @State private var deleting: AlarmRecord?
+    @State private var cancelling: AlarmRecord?
     @State private var authorizationDenied = AlarmManager.shared.authorizationState == .denied
 
     var body: some View {
         TabView {
-            NavigationStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        Text("A gentler start.\nRight on time.")
-                            .font(.largeTitle.bold()).accessibilityAddTraits(.isHeader)
-                        status
-                        TimelineView(.periodic(from: .now, by: 30)) { context in nextAlarm(at: context.date) }
-                        if !store.ringing.isEmpty { ringingControls }
-                        HStack {
-                            Text("YOUR ALARMS").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(store.primaryAlarms.count)").font(.caption.monospacedDigit()).foregroundStyle(
-                                .secondary)
-                        }
-                        if store.primaryAlarms.isEmpty {
-                            ContentUnavailableView {
-                                Label("Make room for morning", systemImage: "sun.horizon")
-                            } description: {
-                                Text("Set an alarm and let a familiar voice tell you the time.")
-                            } actions: {
-                                Button("Create your first alarm") { editing = AlarmRecord() }.buttonStyle(
-                                    .borderedProminent)
-                            }
-                        }
-                        ForEach(store.primaryAlarms) { alarm in alarmCard(alarm) }
-                        ForEach(store.records.filter { $0.parentID != nil }) { alarm in
-                            HStack {
-                                Label(
-                                    "Snoozed until \(alarm.fireDate?.formatted(date: .omitted, time: .shortened) ?? "")",
-                                    systemImage: "zzz")
-                                Spacer()
-                                Button("Cancel") { Task { _ = await store.delete(alarm) } }
-                            }.font(.subheadline).padding().background(
-                                .thinMaterial, in: RoundedRectangle(cornerRadius: 20))
-                        }
-                    }
-                    .frame(maxWidth: 680).padding(24).frame(maxWidth: .infinity)
-                }
-                .background(Color(.systemGroupedBackground))
-                .navigationTitle("Talking Clock").navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Add alarm", systemImage: "plus") { editing = AlarmRecord() }
-                    }
-                }
-            }
-            .tabItem { Label("Alarms", systemImage: "alarm") }
-            ClockView(audio: audio, store: store)
-                .tabItem { Label("Clock", systemImage: "clock") }
-            settings.tabItem { Label("About", systemImage: "waveform") }
+            ClockView(audio: audio, session: session).tabItem { Label("Clock", systemImage: "clock") }
+            alarmScreen.tabItem { Label("Alarm", systemImage: "alarm") }
+            TimerView(timer: timer, session: session).tabItem { Label("Timer", systemImage: "timer") }
         }
         .sheet(item: $editing) { alarm in AlarmEditor(alarm: alarm, store: store, audio: audio) }
+        .fullScreenCover(isPresented: Binding(get: { !store.ringing.isEmpty }, set: { _ in })) {
+            if let alarm = store.ringing.first { RingingView(alarm: alarm, store: store) }
+        }
         .confirmationDialog(
-            "Delete this alarm?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })
+            deleting.map { "Delete \($0.displayDate().formatted(date: .omitted, time: .shortened)) alarm?" }
+                ?? "Delete alarm?",
+            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+            titleVisibility: .visible
         ) {
             if let alarm = deleting {
-                Button("Delete alarm", role: .destructive) {
-                    Task {
-                        _ = await store.delete(alarm)
-                        deleting = nil
-                    }
-                }
+                Button("Cancel", role: .cancel) { deleting = nil }
+                Button("Delete alarm", role: .destructive) { Task { _ = await store.delete(alarm) } }
             }
         } message: {
-            Text("This also cancels any snoozes for this alarm.")
+            if let alarm = deleting { Text("\(alarm.label), \(alarm.repeatDescription().lowercased()).") }
         }
-        .disabled(store.isBusy)
-        .overlay {
-            if store.isBusy {
-                ProgressView("Preparing alarm…").padding(24).background(
-                    .regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+        .confirmationDialog(
+            cancelling.map {
+                "Cancel the \(($0.fireDate ?? $0.displayDate()).formatted(date: .omitted, time: .shortened)) snooze?"
+            } ?? "Cancel snooze?",
+            isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let child = cancelling {
+                Button("Keep snooze", role: .cancel) { cancelling = nil }
+                Button("Cancel snooze", role: .destructive) { Task { _ = await store.delete(child) } }
+            }
+        } message: {
+            if let child = cancelling,
+                let parent = store.records.first(where: { $0.id == child.parentID }),
+                !parent.weekdays.isEmpty, parent.isEnabled
+            {
+                Text("\(parent.label) will still ring at its next scheduled time.")
+            } else {
+                Text("This alarm won't ring again.")
             }
         }
         .alert(
@@ -92,6 +64,14 @@ struct MainView: View {
         } message: {
             Text(store.errorMessage ?? "")
         }
+        .alert(
+            "Speech needs attention",
+            isPresented: Binding(get: { session.errorMessage != nil }, set: { if !$0 { session.errorMessage = nil } })
+        ) {
+            Button("OK") { session.errorMessage = nil }
+        } message: {
+            Text(session.errorMessage ?? "")
+        }
         .task {
             for await state in AlarmManager.shared.authorizationUpdates {
                 authorizationDenied = state == .denied
@@ -100,6 +80,122 @@ struct MainView: View {
         }
     }
 
+    private var alarmScreen: some View {
+        SkyScreen {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack {
+                        Text("Alarms").font(.system(size: 46, weight: .light, design: .serif)).accessibilityAddTraits(
+                            .isHeader)
+                        Spacer()
+                        Button("Add alarm", systemImage: "plus") { editing = AlarmRecord() }
+                            .labelStyle(.iconOnly).frame(width: 44, height: 44).glassEffect()
+                    }
+                    status
+                    TimelineView(.periodic(from: .now, by: 30)) { context in nextAlarm(at: context.date) }
+                    if store.primaryAlarms.isEmpty {
+                        ContentUnavailableView {
+                            Label("No alarms yet", systemImage: "alarm")
+                        } description: {
+                            Text("Add an alarm to hear the time when it rings.")
+                        } actions: {
+                            Button("Create an alarm") { editing = AlarmRecord() }.buttonStyle(.borderedProminent)
+                        }
+                    } else {
+                        GlassPanel {
+                            VStack(spacing: 0) {
+                                ForEach(store.primaryAlarms) { alarm in
+                                    if alarm.id != store.primaryAlarms.first?.id { Divider() }
+                                    alarmRow(alarm)
+                                    ForEach(store.records.filter { $0.parentID == alarm.id }) { child in
+                                        snoozeRow(child)
+                                    }
+                                }
+                            }.clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                    }
+                    if store.isBusy { ProgressView("Preparing alarm…") }
+                }.padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
+            }.disabled(store.isBusy)
+        }
+    }
+
+    private func nextAlarm(at date: Date) -> some View {
+        GlassPanel {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Next alarm").font(.caption)
+                if let (alarm, next) = store.nextAlarm(after: date) {
+                    Text(next, format: .dateTime.hour().minute()).font(
+                        .system(size: 54, weight: .light, design: .serif))
+                    Text(
+                        "\(alarm.label)\(alarm.parentID == nil ? "" : ", snoozed"), in \(SpokenTime.duration(max(60, Int(next.timeIntervalSince(date)) / 60 * 60)))"
+                    )
+                    .font(.system(.subheadline, design: .serif).italic())
+                } else {
+                    Text("None").font(.system(size: 54, weight: .light, design: .serif))
+                    Text("Turn on an alarm below").font(.subheadline)
+                }
+            }
+        }
+    }
+
+    private func alarmRow(_ alarm: AlarmRecord) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                editing = alarm
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(alarm.displayDate(), format: .dateTime.hour().minute())
+                        .font(.system(size: 34, weight: .light, design: .serif)).monospacedDigit()
+                        .opacity(store.isScheduled(alarm) ? 1 : 0.4)
+                    Text("\(alarm.label), \(alarm.repeatDescription().lowercased())")
+                        .font(.subheadline).multilineTextAlignment(.leading)
+                    if store.ringing.contains(where: { $0.id == alarm.id }) {
+                        Text("ringing now").font(.caption).foregroundStyle(.tint)
+                    }
+                }
+            }.buttonStyle(.plain).accessibilityLabel(
+                "Edit \(alarm.label), \(alarm.displayDate().formatted(date: .omitted, time: .shortened))")
+            Spacer(minLength: 0)
+            Toggle(
+                "\(alarm.label) alarm",
+                isOn: Binding(
+                    get: { store.isScheduled(alarm) },
+                    set: { enabled in
+                        var updated = alarm
+                        updated.isEnabled = enabled
+                        Task { _ = await store.save(updated) }
+                    })
+            ).labelsHidden().fixedSize()
+            Button("Delete alarm", systemImage: "trash", role: .destructive) { deleting = alarm }
+                .labelStyle(.iconOnly).frame(width: 44, height: 44)
+        }.padding(.vertical, 12)
+            .contextMenu { Button("Delete alarm", systemImage: "trash", role: .destructive) { deleting = alarm } }
+    }
+
+    private func snoozeRow(_ child: AlarmRecord) -> some View {
+        HStack {
+            Image(systemName: "arrow.turn.down.right").foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(
+                    "Snoozed until \((child.fireDate ?? child.displayDate()).formatted(date: .omitted, time: .shortened))"
+                )
+                if let date = child.fireDate { Text(date, style: .relative).font(.caption) }
+            }.font(.subheadline)
+            Spacer()
+            Button("Cancel") { cancelling = child }.frame(minWidth: 44, minHeight: 44)
+        }.padding(10).background(.tint.opacity(0.1))
+            .overlay(alignment: .top) {
+                Rectangle().fill(.tint).frame(height: 1).mask {
+                    HStack(spacing: 4) { ForEach(0..<60) { _ in Rectangle().frame(width: 4) } }
+                }
+            }
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
     @ViewBuilder private var status: some View {
         if store.storageFailed {
             Label(
@@ -129,124 +225,28 @@ struct MainView: View {
         }
     }
 
-    private func nextAlarm(at date: Date) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("UP NEXT", systemImage: "sun.max.fill").font(.caption.weight(.semibold))
-            if let (alarm, next) = store.nextAlarm(after: date) {
-                Text(next, format: .dateTime.hour().minute()).font(
-                    .system(.largeTitle, design: .rounded, weight: .semibold))
-                Text("\(alarm.label) · \(next.formatted(.dateTime.weekday(.wide)))").font(.subheadline)
-                Text(next, style: .relative).font(.caption.monospacedDigit()) + Text(" from now").font(.caption)
-            } else {
-                Text("No alarms ahead").font(.title2.weight(.semibold))
-                Text("Your next beginning is up to you.").font(.subheadline)
+}
+
+private struct RingingView: View {
+    let alarm: AlarmRecord
+    @Bindable var store: AlarmStore
+    var body: some View {
+        SkyScreen(minute: Double(alarm.hour * 60 + alarm.minute)) {
+            ScrollView {
+                VStack(spacing: 24) {
+                    Label("Alarm", systemImage: "bell").font(.title3.weight(.medium))
+                    Text(alarm.label).font(.system(size: 34, weight: .light, design: .serif).italic())
+                    HaloRing(progress: 1, glowing: true) { HaloTime(date: alarm.displayDate()) }
+                    Text(SpokenTime.alarm(alarm)).font(.title3).multilineTextAlignment(.center)
+                    HStack(spacing: 10) {
+                        Button("Snooze \(alarm.snoozeMinutes) min") { Task { _ = await store.snooze(alarm) } }
+                            .buttonStyle(HaloButtonStyle())
+                        Button("Stop") { Task { _ = await store.stop(alarm) } }
+                            .buttonStyle(HaloButtonStyle(primary: true))
+                    }.disabled(store.isBusy)
+                    if let error = store.errorMessage { Text(error).font(.footnote) }
+                }.padding(20).frame(maxWidth: 540).frame(maxWidth: .infinity)
             }
-        }
-        .foregroundStyle(Color(.label))
-        .frame(maxWidth: .infinity, alignment: .leading).padding(24)
-        .background(
-            LinearGradient(
-                colors: [.orange.opacity(0.25), .yellow.opacity(0.10)], startPoint: .topLeading,
-                endPoint: .bottomTrailing),
-            in: RoundedRectangle(cornerRadius: 28))
-    }
-
-    private func alarmCard(_ alarm: AlarmRecord) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 16) {
-                Button {
-                    editing = alarm
-                } label: {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(alarm.displayDate(), format: .dateTime.hour().minute())
-                            .font(.system(.largeTitle, design: .rounded, weight: .medium)).monospacedDigit()
-                        Text(alarm.label).font(.headline)
-                    }.foregroundStyle(.primary).multilineTextAlignment(.leading)
-                }.buttonStyle(.plain).accessibilityLabel(
-                    "Edit \(alarm.label), \(alarm.displayDate().formatted(date: .omitted, time: .shortened))")
-                Spacer(minLength: 0)
-                Toggle(
-                    "Enable \(alarm.label)",
-                    isOn: Binding(
-                        get: { store.isScheduled(alarm) },
-                        set: { enabled in
-                            var updated = alarm
-                            updated.isEnabled = enabled
-                            Task { _ = await store.save(updated) }
-                        })
-                ).labelsHidden().fixedSize()
-            }
-            ViewThatFits(in: .horizontal) {
-                HStack {
-                    alarmDetails(alarm)
-                    Spacer()
-                    deleteButton(alarm)
-                }
-                VStack(alignment: .leading) {
-                    alarmDetails(alarm)
-                    deleteButton(alarm)
-                }
-            }
-        }
-        .padding(22).background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 26))
-    }
-
-    private func alarmDetails(_ alarm: AlarmRecord) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(alarm.repeatDescription()).font(.subheadline).foregroundStyle(.secondary)
-            Label(
-                alarm.announcesTime ? "Speaks the time" : "System sound",
-                systemImage: alarm.announcesTime ? "waveform" : "bell"
-            )
-            .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-    private func deleteButton(_ alarm: AlarmRecord) -> some View {
-        Button("Delete", systemImage: "trash", role: .destructive) { deleting = alarm }
-            .font(.subheadline).padding(.vertical, 8)
-    }
-
-    private var ringingControls: some View {
-        ForEach(store.ringing, id: \.systemID) { alarm in
-            VStack(alignment: .leading, spacing: 16) {
-                Label("\(alarm.label) is ringing", systemImage: "alarm.waves.left.and.right.fill").font(.title3.bold())
-                HStack {
-                    Button("Snooze \(alarm.snoozeMinutes) min") { Task { _ = await store.snooze(alarm) } }.buttonStyle(
-                        .borderedProminent)
-                    Button("Stop", role: .destructive) { Task { _ = await store.stop(alarm) } }.buttonStyle(.bordered)
-                }
-            }.padding().frame(maxWidth: .infinity, alignment: .leading).background(
-                .orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 22))
-        }
-    }
-
-    private var settings: some View {
-        NavigationStack {
-            Form {
-                Section("A voice for your morning") {
-                    Label("Spoken time in English", systemImage: "waveform")
-                    Text(
-                        "Your alarm sound combines a gentle chime with its scheduled time. Preview it in the alarm editor."
-                    )
-                    Text("The recording says the scheduled time. It does not update while the alarm rings.")
-                }
-                Section("Make it yours") {
-                    Text(
-                        "Choose repeat days and snooze length for each alarm. Open Talking Clock from the system alarm to snooze; use Stop on the system alert to dismiss it."
-                    )
-                    Text("Use your iPhone’s alarm volume. Test an alarm with your device locked before relying on it.")
-                    Button("Open system settings") { openSettings() }
-                }
-                Section("Private by design") {
-                    Label("On your device. No account. No tracking.", systemImage: "lock.shield")
-                    Link("Support", destination: URL(string: "https://github.com/jiahuei/ios-talking-clock/issues")!)
-                }
-            }.navigationTitle("Good to know")
-        }
-    }
-
-    private func openSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+        }.interactiveDismissDisabled()
     }
 }

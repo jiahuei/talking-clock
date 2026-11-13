@@ -71,8 +71,13 @@ public struct SystemAlarm: Equatable, Sendable {
             if alarm.weekdays.isEmpty, alarm.isEnabled {
                 alarm.fireDate = alarm.nextFire(after: now, calendar: calendar)
             }
-            let removed = document.records.filter { $0.id == alarm.id || $0.parentID == alarm.id }
-            let target = document.records.filter { $0.id != alarm.id && $0.parentID != alarm.id } + [alarm]
+            // Editing a parent's snooze preference must not move or cancel an existing snooze.
+            // Disabling and deleting still cancel its children.
+            let removed = document.records.filter {
+                $0.id == alarm.id || (!alarm.isEnabled && $0.parentID == alarm.id)
+            }
+            let removedIDs = Set(removed.map(\.id))
+            let target = document.records.filter { !removedIDs.contains($0.id) } + [alarm]
             try await commit(
                 target: target, additions: alarm.isEnabled ? [alarm] : [],
                 cancellations: Set(removed.map(\.systemID)))

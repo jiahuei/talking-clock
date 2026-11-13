@@ -10,6 +10,9 @@ Follow the [App Store publishing guide](docs/app-store-publishing.md) for detail
 - [ ] Verify custom spoken sounds with the app foregrounded, backgrounded, terminated, and after restart/unlock.
 - [ ] Test silent mode, Focus, permission denial/revocation, and system volume.
 - [ ] Confirm stop, snooze, repeat schedules, DST, and time-zone behavior.
+- [ ] Record the hour-long background speech spike and choose the production architecture before enabling it.
+- [ ] Verify AlarmKit custom-sound duration/replay before exposing 15/30/60-second ringing cadence.
+- [ ] Verify Timer countdown Live Activity, pause/resume/reset, and spoken final alert after force-quit.
 - [ ] Test accessibility, iPad, landscape, and light/dark appearance.
 - [ ] Add final app icon and real screenshots.
 - [ ] Configure developer signing, app identifier, and App Store Connect metadata.

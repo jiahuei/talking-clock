@@ -10,7 +10,7 @@ For first-time Mac setup and the complete release process, see the [App Store pu
 4. Run, add an alarm, and allow alarm access when asked. Permissions are requested when enabling an alarm, not at launch.
 5. Preview the spoken sound in the editor. To test system delivery, set an alarm a few minutes ahead, save, then lock the device.
 
-The app uses an English voice. With speech off, it uses the system alarm sound. To snooze, tap Open on the system alert and use the app's Snooze button; system Stop dismisses the alarm. There is no countdown Live Activity.
+The app uses an English voice. With speech off, it uses the system alarm sound. To snooze, tap Open on the system alert and use the app's Snooze button; system Stop dismisses the alarm. Timer completion uses an AlarmKit countdown with a Live Activity. Clock and Timer interval speech currently requires the foreground; see [delivery gates](docs/delivery-investigation.md).
 
 ## Automated checks
 
@@ -30,9 +30,9 @@ On pull requests, pushes to `main`, and tags matching `v*`, iOS CI runs package 
 
 ## Storage and recovery
 
-The app stores versioned JSON in Application Support/TalkingClock and generated PCM voice clips in Library/Sounds. Clips are shared by spoken time and contain no personal alarm labels. The archive's `clockSettings` key is not migrated because it contains interval-clock preferences, not alarms.
+The app stores versioned JSON in Application Support/TalkingClock and generated PCM voice clips in Library/Sounds. Clips are keyed by their complete spoken phrase, including alarm labels; do not print their content in diagnostics. The archive's `clockSettings` key is not migrated because it contains interval-clock preferences, not alarms.
 
-A change journal is saved before touching system alarms. Replacement alarms are scheduled before old registrations are cancelled. If a change fails, use **Retry sync** to finish it or **Discard change** to restore the previous configuration. A pending change blocks further edits; old schedules can remain active until retry succeeds. Relaunching does not automatically replay a pending change or re-arm a missing alarm. An unreadable file is preserved and writes are blocked.
+A change journal is saved before touching system alarms. Replacement alarms are scheduled before old registrations are cancelled. Enabled-parent edits preserve existing snoozes; disabling/deleting the parent cancels them. Version-1 snooze values migrate to the 2–15 minute range in records and recovery journals before validation. If a change fails, use **Retry sync** to finish it or **Discard change** to restore the previous configuration. A pending change blocks further edits; old schedules can remain active until retry succeeds. Relaunching does not automatically replay a pending change or re-arm a missing alarm. An unreadable file is preserved and writes are blocked.
 
 One-time alarms and snoozes use fixed dates. Weekly alarms follow local wall-clock time through AlarmKit. The next-alarm display uses Calendar's next-valid-time/first-repeated-time policy; verify OS delivery behavior around DST on real devices.
 

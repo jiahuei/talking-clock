@@ -252,7 +252,7 @@ Before working on the app or its domain code, read and follow `docs/SPEC.md` and
 
 - Use AlarmKit for system alarms. An in-process timer or local notification is not an equivalent alarm.
 - Prepare spoken audio before scheduling. App code is not guaranteed to execute when a background alarm rings.
-- Do not keep the app alive with silent audio, force system volume, request unrelated permissions, or promise critical alerts.
+- Background audio is permitted only for an explicitly user-started Clock or Timer announcement session after the physical-device spike in issue #7 passes. Show the active session in a Live Activity, and stop it when the user stops it or the timer ends. Keep experiments separate from production behavior. Do not force system volume, request unrelated permissions, or promise critical alerts.
 - An alarm is enabled only after successful scheduling. Keep failed edits recoverable; never silently replace a working alarm with an unscheduled one.
 - Use calendar arithmetic for wall-clock alarms, inject dates/calendars in domain tests, and cover DST and week rollover.
 - Keep alarm identifiers stable, preserve repeat schedules when snoozing, and reconcile persisted records with the system.

@@ -3,78 +3,119 @@ import SwiftUI
 
 struct ClockView: View {
     let audio: AlarmAudio
-    @Bindable var store: AlarmStore
+    @Bindable var session: AnnouncementSession
+    @State private var showingAbout = false
+    @Environment(\.scenePhase) private var phase
+    @Environment(\.halo) private var palette
 
     var body: some View {
-        NavigationStack {
+        SkyScreen {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 ScrollView {
                     VStack(spacing: 28) {
-                        Text(context.date, format: .dateTime.weekday(.wide).month(.wide).day())
-                            .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
-                        ClockFace(date: context.date).frame(maxWidth: 300).aspectRatio(1, contentMode: .fit)
-                            .accessibilityHidden(true)
-                        Text(context.date, format: .dateTime.hour().minute())
-                            .font(.system(.largeTitle, design: .rounded, weight: .light)).monospacedDigit()
-                            .accessibilityAddTraits(.updatesFrequently)
-                        Text(
-                            TimeZone.current.localizedName(for: .generic, locale: .current)
-                                ?? TimeZone.current.identifier
-                        )
-                        .font(.subheadline).foregroundStyle(.secondary)
+                        HStack {
+                            Text(context.date, format: .dateTime.weekday(.wide).month(.abbreviated).day())
+                                .font(.title3.weight(.medium)).accessibilityAddTraits(.isHeader)
+                            Spacer()
+                            Button("About", systemImage: "info.circle") { showingAbout = true }
+                                .labelStyle(.iconOnly).frame(width: 44, height: 44).glassEffect()
+                        }
                         Button {
-                            do { try audio.speakNow() } catch { store.errorMessage = error.localizedDescription }
+                            speak()
                         } label: {
-                            Label("Speak the time", systemImage: "waveform").padding(.horizontal, 20).padding(
-                                .vertical, 8)
-                        }.buttonStyle(.borderedProminent).buttonBorderShape(.capsule)
-                        Text("A moment, just for now.").font(.footnote).foregroundStyle(.secondary)
-                    }.padding(32).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                            HaloRing(progress: progress(at: context.date), glowing: audio.isSpeaking) {
+                                HaloTime(date: context.date)
+                            }
+                        }.buttonStyle(.plain).accessibilityLabel(phrase(at: context.date, introduction: true))
+                        Text(phrase(at: context.date, introduction: false))
+                            .font(.system(.title2, design: .serif).italic()).multilineTextAlignment(.center)
+                            .frame(maxWidth: 300)
+                        GlassPanel {
+                            VStack(alignment: .leading, spacing: 18) {
+                                Text("Speak the time every").font(.subheadline)
+                                Picker("Speak the time every", selection: $session.clockMinutes) {
+                                    ForEach(IntervalScheduler.clockMinutes, id: \.self) { minutes in
+                                        Text(minutes == 60 ? "1 hour" : "\(minutes) min").tag(minutes)
+                                    }
+                                    Text("Off").tag(0)
+                                }.pickerStyle(.segmented)
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        if let next = session.nextClock {
+                                            Text("Next at \(next.formatted(date: .omitted, time: .shortened))")
+                                            Text(
+                                                "in \(max(1, Int(ceil(next.timeIntervalSince(context.date) / 60)))) min"
+                                            ).font(.caption)
+                                        } else {
+                                            Text("Speaking is off")
+                                            Text("Tap the time to hear it").font(.caption)
+                                        }
+                                    }
+                                    Spacer()
+                                    Button(
+                                        audio.isSpeaking ? "Stop" : "Say the time",
+                                        systemImage: audio.isSpeaking ? "stop.fill" : "waveform"
+                                    ) {
+                                        if audio.isSpeaking { audio.stop() } else { speak() }
+                                    }.labelStyle(.iconOnly).buttonStyle(.borderedProminent).buttonBorderShape(.circle)
+                                        .controlSize(.large)
+                                }
+                                Text("Keep the app open for interval speech.")
+                                    .font(.footnote)
+                            }
+                        }
+                    }.padding(20).frame(maxWidth: 540).frame(maxWidth: .infinity)
                 }
             }
-            .background(Color(.systemGroupedBackground)).navigationTitle("Now")
         }
+        .sheet(isPresented: $showingAbout) { AboutView() }
+        .onChange(of: session.clockMinutes) { _, _ in session.updateClock(active: phase == .active) }
+    }
+
+    private func speak() {
+        Task { do { try await audio.speakNow() } catch { session.errorMessage = error.localizedDescription } }
+    }
+
+    private func phrase(at date: Date, introduction: Bool) -> String {
+        SpokenTime.clock(
+            hour: Calendar.current.component(.hour, from: date),
+            minute: Calendar.current.component(.minute, from: date), includesIntroduction: introduction)
+    }
+
+    private func progress(at date: Date) -> Double {
+        guard let next = session.nextClock, session.clockMinutes > 0 else { return 0 }
+        return 1 - next.timeIntervalSince(date) / Double(session.clockMinutes * 60)
     }
 }
 
-private struct ClockFace: View {
-    let date: Date
-    @Environment(\.colorScheme) private var colorScheme
-
+struct AboutView: View {
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
-        Canvas { context, size in
-            let center = CGPoint(x: size.width / 2, y: size.height / 2)
-            let radius = min(size.width, size.height) / 2 - 4
-            let face = Path(
-                ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
-            context.fill(face, with: .color(Color(.secondarySystemGroupedBackground)))
-            for mark in 0..<60 {
-                let angle = Double(mark) * .pi / 30 - .pi / 2
-                let outer = radius - 15
-                let inner = outer - (mark % 5 == 0 ? 13.0 : 5.0)
-                var tick = Path()
-                tick.move(to: CGPoint(x: center.x + cos(angle) * inner, y: center.y + sin(angle) * inner))
-                tick.addLine(to: CGPoint(x: center.x + cos(angle) * outer, y: center.y + sin(angle) * outer))
-                context.stroke(
-                    tick, with: .color(.secondary.opacity(mark % 5 == 0 ? 0.8 : 0.3)), lineWidth: mark % 5 == 0 ? 2 : 1)
-            }
-            let parts = Calendar.current.dateComponents([.hour, .minute, .second], from: date)
-            let minutes = Double(parts.minute ?? 0)
-            let hourAngle = (Double((parts.hour ?? 0) % 12) + minutes / 60) * .pi / 6 - .pi / 2
-            let minuteAngle = minutes * .pi / 30 - .pi / 2
-            let secondAngle = Double(parts.second ?? 0) * .pi / 30 - .pi / 2
-            for (angle, length, width, color) in [
-                (hourAngle, radius * 0.48, 6.0, Color.primary),
-                (minuteAngle, radius * 0.7, 4.0, Color.primary),
-                (secondAngle, radius * 0.76, 1.5, Color.orange),
-            ] {
-                var hand = Path()
-                hand.move(to: center)
-                hand.addLine(to: CGPoint(x: center.x + cos(angle) * length, y: center.y + sin(angle) * length))
-                context.stroke(hand, with: .color(color), style: StrokeStyle(lineWidth: width, lineCap: .round))
-            }
-            context.fill(
-                Path(ellipseIn: CGRect(x: center.x - 5, y: center.y - 5, width: 10, height: 10)), with: .color(.orange))
-        }
+        NavigationStack {
+            Form {
+                Section("How it speaks") {
+                    Text(
+                        "Clock, Alarm and Timer can each say their time aloud. Clock and Timer interval speech currently requires the app to remain open."
+                    )
+                    Text("System alarms use a recording of their scheduled time and label. Open the app to snooze.")
+                    Text(
+                        "Use your iPhone's alarm volume, and test an alarm with your iPhone locked before relying on it."
+                    )
+                }
+                Section("Private by design") {
+                    Text("Everything stays on your iPhone. No account, no tracking.")
+                    NavigationLink("Privacy Policy") {
+                        ScrollView {
+                            Text(
+                                "Talking Clock stores alarms and generated speech on your device. It does not collect analytics, create accounts, or send your alarm data to a server. Deleting the app removes its local data. Support links open GitHub in your browser, where GitHub's privacy policy applies."
+                            )
+                            .padding()
+                        }.navigationTitle("Privacy Policy")
+                    }
+                    Link("Support", destination: URL(string: "https://github.com/jiahuei/talking-clock/issues")!)
+                }
+            }.navigationTitle("About")
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }.presentationDetents([.large])
     }
 }
